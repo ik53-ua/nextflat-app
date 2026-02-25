@@ -60,6 +60,8 @@ Herramientas necesarias para ejecutar el proyecto (A definir en la primera reuni
 ### 2. Configuración del Frontend
 
 ---
+## Enlace tablero trello
+https://trello.com/invite/b/699f3e06e323b1ae66595881/ATTI42184610c24206d97aaf03add4ab81eaEECD7DC6/tablero-taes
 
 ## ✒️ Autores (Equipo NextFlat)
 
