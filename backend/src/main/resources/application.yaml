@@ -1,3 +1,25 @@
 spring:
   application:
     name: nextflat
+
+  # Configuración de la Base de Datos (Supabase / PostgreSQL)
+  datasource:
+    url: jdbc:postgresql://aws-1-eu-central-1.pooler.supabase.com:5432/postgres
+    username: postgres.rxpgzthbvgjbkatalyly
+    password: LaContraseñaMasSeguraDelMundo1234567890.
+    driver-class-name: org.postgresql.Driver
+
+  # Configuración de Hibernate / JPA
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      # 'update' creará/actualizará las tablas automáticamente basándose en tu código Java.
+      ddl-auto: update
+    show-sql: true # Muestra las consultas SQL en la consola (para debugear)
+    properties:
+      hibernate:
+        format_sql: true
+
+# Configuración del servidor
+server:
+  port: 8080
