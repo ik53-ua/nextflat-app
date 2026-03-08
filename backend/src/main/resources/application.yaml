@@ -8,18 +8,21 @@ spring:
     username: postgres.rxpgzthbvgjbkatalyly
     password: LaContraseñaMasSeguraDelMundo1234567890.
     driver-class-name: org.postgresql.Driver
+    # Configuración para evitar cortes de conexión con Supabase
+    hikari:
+      max-lifetime: 120000 # Destruye las conexiones cada 2 minutos antes de que Supabase lo haga
+      idle-timeout: 60000 # Limpia las conexiones inactivas al minuto
+      keepalive-time: 30000 # Envía un "latido" cada 30 segundos para mantenerla viva
 
   # Configuración de Hibernate / JPA
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      # 'update' creará/actualizará las tablas automáticamente basándose en tu código Java.
       ddl-auto: update
-    show-sql: true # Muestra las consultas SQL en la consola (para debugear)
+    show-sql: true
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
 
-# Configuración del servidor
 server:
   port: 8080

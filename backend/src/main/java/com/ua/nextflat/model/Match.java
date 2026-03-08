@@ -27,7 +27,7 @@ public class Match {
     private Inmueble inmueble;
 
     @Enumerated(EnumType.STRING)
-    private EstadoMatch estado = EstadoMatch.CONFIRMADO; // [cite: 90]
+    private EstadoMatch estado = EstadoMatch.CONFIRMADO; 
 
     @CreationTimestamp
     private LocalDateTime fechaMatch;
