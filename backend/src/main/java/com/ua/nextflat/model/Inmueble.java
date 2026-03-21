@@ -43,4 +43,6 @@ public class Inmueble {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+    @Transient
+    private String fotoPrincipal;
 }
