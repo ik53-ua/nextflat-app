@@ -23,6 +23,24 @@ import java.util.Map;
 @Component
 public class DatabaseSeeder implements CommandLineRunner {
 
+    private static final String[] FOTO_URLS = {
+    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1920&auto=format&fit=crop&q=80", // salón sofá verde
+    "https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=1920&auto=format&fit=crop&q=80", // salón moderno
+    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1920&auto=format&fit=crop&q=80", // cocina blanca
+    "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=1920&auto=format&fit=crop&q=80", // dormitorio blanco
+    "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=1920&auto=format&fit=crop&q=80", // salón minimalista
+    "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1920&auto=format&fit=crop&q=80", // dormitorio hotel
+    "https://images.unsplash.com/photo-1588854337115-1c67d9247e4d?w=1920&auto=format&fit=crop&q=80", // cocina moderna
+    "https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=1920&auto=format&fit=crop&q=80", // baño moderno
+    "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1920&auto=format&fit=crop&q=80", // salón plantas
+    "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?w=1920&auto=format&fit=crop&q=80", // salón industrial
+    "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=1920&auto=format&fit=crop&q=80", // cocina isla
+    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=1920&auto=format&fit=crop&q=80", // dormitorio oscuro
+    "https://images.unsplash.com/photo-1585128792020-803d29415281?w=1920&auto=format&fit=crop&q=80", // baño bañera
+    "https://images.unsplash.com/photo-1617104678098-de229db51175?w=1920&auto=format&fit=crop&q=80", // terraza
+    "https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=1920&auto=format&fit=crop&q=80", // casa exterior
+};
+
     private final UsuarioRepository usuarioRepository;
     private final InmuebleRepository inmuebleRepository;
     private final FotoInmuebleRepository fotoInmuebleRepository;
@@ -36,14 +54,13 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     @Override
-    @Transactional // Esto asegura que todo el proceso sea una única operación rápida
+    @Transactional
     public void run(String... args) throws Exception {
         if (usuarioRepository.count() == 0) {
             System.out.println("🌱 Base de datos vacía. Iniciando Seeder optimizado con saveAll...");
-            
+
             Faker faker = new Faker(new Locale("es", "ES"));
 
-            // Configuración de municipios y calles
             Map<String, String[]> callesPorMunicipio = new HashMap<>();
             callesPorMunicipio.put("San Vicente del Raspeig", new String[]{"Calle Mayor", "Avenida de la Universidad", "Calle Alicante", "Avenida Ancha de Castelar", "Calle Pintor Picasso"});
             callesPorMunicipio.put("Alicante", new String[]{"Explanada de España", "Avenida Maisonnave", "Calle Castaños", "Avenida de Alfonso X El Sabio", "Calle San Francisco"});
@@ -59,7 +76,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                 "Espectacular loft de diseño moderno. Cocina americana abierta al salón, acabados de primera calidad, suelo de tarima y muchísima luz natural."
             };
 
-            // Listas temporales para acumular los datos
             List<Usuario> usuariosALista = new ArrayList<>();
             List<Inmueble> inmueblesALista = new ArrayList<>();
             List<FotoInmueble> fotosALista = new ArrayList<>();
@@ -69,8 +85,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 Usuario inquilino = new Usuario();
                 inquilino.setNombre(faker.name().fullName());
                 inquilino.setEmail("inquilino" + i + "@nextflat.com");
-                inquilino.setPassword("password123"); 
-                inquilino.setRol(RolUsuario.INQUILINO); 
+                inquilino.setPassword("password123");
+                inquilino.setRol(RolUsuario.INQUILINO);
                 inquilino.setProfesion(faker.company().profession());
                 inquilino.setBio("Hola, soy " + inquilino.getNombre() + ". Busco un piso compartido por la zona.");
                 inquilino.setVerificado(true);
@@ -82,7 +98,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             // 2. Generar 25 Propietarios (5 por ciudad)
             String[] municipios = {"San Vicente del Raspeig", "Alicante", "Valencia", "Madrid", "Barcelona"};
             int cuentaPropietario = 1;
-            for (String m : municipios) {
+            for (int i = 0; i < municipios.length; i++) {
                 for (int p = 1; p <= 5; p++) {
                     Usuario propietario = new Usuario();
                     propietario.setNombre(faker.name().fullName());
@@ -95,14 +111,12 @@ public class DatabaseSeeder implements CommandLineRunner {
                 }
             }
 
-            // GUARDAR USUARIOS (Primer bloque)
             usuarioRepository.saveAll(usuariosALista);
 
             // 3. Generar 50 Inmuebles (2 por propietario)
             int indexMunicipio = 0;
             int contadorPisosEnCiudad = 0;
-            int contadorFotosTotal = 1;
-            String[] keywordsFotos = {"livingroom", "bedroom", "kitchen", "bathroom"};
+            int contadorFotosTotal = 0; // ✅ Empieza en 0 para que el módulo funcione bien
 
             for (Usuario u : usuariosALista) {
                 if (u.getRol() == RolUsuario.PROPIETARIO) {
@@ -119,34 +133,33 @@ public class DatabaseSeeder implements CommandLineRunner {
                         inm.setNumHabitaciones(faker.number().numberBetween(1, 5));
                         inm.setNumBanos(faker.number().numberBetween(1, 3));
                         inm.setActivo(true);
-                        
                         inmueblesALista.add(inm);
                     }
-                    
+
                     contadorPisosEnCiudad++;
-                    if (contadorPisosEnCiudad == 5) { // Cada 5 propietarios cambiamos de ciudad
+                    if (contadorPisosEnCiudad == 5) {
                         indexMunicipio++;
                         contadorPisosEnCiudad = 0;
                     }
                 }
             }
 
-            // GUARDAR INMUEBLES (Segundo bloque)
             inmuebleRepository.saveAll(inmueblesALista);
 
-            // 4. Generar 150 Fotos (3 por inmueble)
+            // 4. Generar 150 Fotos (3 por inmueble) con más variedad
+            int inmuebleIndex = 0;
             for (Inmueble inmGuardado : inmueblesALista) {
-                for (int k = 1; k <= 3; k++) {
+                for (int k = 0; k < 3; k++) {
                     FotoInmueble foto = new FotoInmueble();
                     foto.setInmueble(inmGuardado);
-                    String kw = keywordsFotos[contadorFotosTotal % keywordsFotos.length];
-                    foto.setUrl("https://loremflickr.com/800/600/" + kw + "?lock=" + contadorFotosTotal);
+                    // Cada foto del mismo inmueble usa un índice muy diferente
+                    int urlIndex = (inmuebleIndex * 7 + k * 5) % FOTO_URLS.length;
+                    foto.setUrl(FOTO_URLS[urlIndex]);
                     fotosALista.add(foto);
-                    contadorFotosTotal++;
                 }
+                inmuebleIndex++;
             }
 
-            // GUARDAR FOTOS (Tercer bloque final)
             fotoInmuebleRepository.saveAll(fotosALista);
 
             System.out.println("✅ ¡ÉXITO! Se han insertado 50 inmuebles y 150 fotos correctamente.");
