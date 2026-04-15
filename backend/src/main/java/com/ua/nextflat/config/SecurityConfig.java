@@ -17,10 +17,11 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .anyRequest().permitAll()
+                .requestMatchers("/api/usuarios/registro", "/api/usuarios/login", "/api/pisos", "/api/pisos/**").permitAll()
+                .anyRequest().authenticated()
             )
-            .httpBasic(basic -> basic.disable())  // ✅
-            .formLogin(form -> form.disable());   // ✅
+            .httpBasic(basic -> basic.disable())  
+            .formLogin(form -> form.disable());   
 
         return http.build();
     }
