@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/feed")
+@CrossOrigin(origins = "http://localhost:5173")
 public class FeedController {
 
     private final FeedService feedService;

@@ -52,15 +52,27 @@ const DUMMY_FLATS = [
 export default function TenantFeed() {
   const [flats, setFlats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const userId = 1; // Assuming a logged in user ID for now
+  const usuarioGuardado = localStorage.getItem('usuarioLogueado');
+  const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+  const userId = currentUser ? currentUser.id : null; 
 
   const fetchFeed = async () => {
+    console.log("1. Intentando buscar pisos para el usuario con ID:", userId); 
+
+    if (!userId) {
+      console.log("❌ ERROR: No hay userId. Abortando búsqueda.");
+      setLoading(false);
+      return; 
+    }
+
     setLoading(true);
     try {
+      console.log("2. Llamando a getFeedForUser...");
       const data = await getFeedForUser(userId);
+      
+      console.log("3. Respuesta cruda del backend:", data); 
 
       if (Array.isArray(data)) {
-        // 🔥 ESTE ES EL CAMBIO: Traducimos los nombres de la BD a los nombres que usa tu JSX
         const formattedFlats = data.map((dbFlat) => ({
           id: dbFlat.id,
           title: dbFlat.direccion, // El JSX espera 'title', la BD da 'direccion'
@@ -91,10 +103,11 @@ export default function TenantFeed() {
 
   useEffect(() => {
     fetchFeed();
-  }, []);
+  }, [userId]);
 
   const handleSwipe = async (type, item) => {
-    // Optimistically remove from UI
+    if (!userId) return;
+
     setFlats((prev) => prev.filter((f) => f.id !== item.id));
 
     try {

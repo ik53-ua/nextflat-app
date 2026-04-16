@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 
 const RegisterPage = () => {
-  // Inicializamos el hook de navegación
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -50,9 +49,16 @@ const RegisterPage = () => {
       });
 
       if (response.ok) {
+        // 1. Extraemos los datos del nuevo usuario devueltos por el backend
+        const userData = await response.json();
+        
+        // 2. Guardamos el usuario en el navegador para iniciar su sesión automáticamente
+        localStorage.setItem('usuarioLogueado', JSON.stringify(userData));
+
         alert('¡Registro completado con éxito!');
-        // Utilizamos navigate para redirigir al inicio ('/') sin recargar la página
-        navigate('/'); 
+        
+        // 3. Redirigimos forzando la recarga para que el Navbar se actualice inmediatamente
+        window.location.href = '/'; 
       } else {
         const errorData = await response.json();
         alert(`Error en el registro: ${errorData.message || 'Revisa los datos'}`);
