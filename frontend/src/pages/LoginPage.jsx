@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Button from '../components/ui/Button'; // Asegúrate de que la ruta a tu botón es correcta
+import Button from '../components/ui/Button';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -22,8 +22,7 @@ const LoginPage = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      
-      // Hacemos la petición POST al backend a la ruta de login
+
       const response = await fetch(`${apiUrl}/api/usuarios/login`, {
         method: 'POST',
         headers: {
@@ -36,18 +35,13 @@ const LoginPage = () => {
       });
 
       if (response.ok) {
-        // Obtenemos los datos del usuario que nos devuelve el backend
         const userData = await response.json();
-        
-        // Guardamos el usuario en el navegador para simular la sesión
         localStorage.setItem('usuarioLogueado', JSON.stringify(userData));
-        
-        // Redirigimos al inicio
-        navigate('/'); 
+        navigate('/');
       } else {
         alert('Credenciales incorrectas. Por favor, revisa tu correo y contraseña.');
       }
-      
+
     } catch (error) {
       console.error('Error al conectar con el servidor:', error);
       alert('No se ha podido conectar con el servidor. ¿Está el backend encendido?');
@@ -55,70 +49,107 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-gradient-to-br from-rose-50 to-pink-100 px-4 py-8 pb-24 sm:px-6 lg:px-8">
-      <div className="max-w-lg w-full"> 
-        <div className="bg-white rounded-xl shadow-lg p-8 space-y-8">
+    <div
+      className="h-full overflow-hidden flex flex-col items-center justify-center px-4 py-8 sm:px-6 lg:px-8 relative"
+      style={{
+        background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)',
+      }}
+    >
+      {/* Decorative blobs */}
+      <div style={{
+        position: 'absolute', top: '-80px', right: '-80px',
+        width: '320px', height: '320px', borderRadius: '50%',
+        background: 'rgba(255,255,255,0.08)', pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-60px', left: '-60px',
+        width: '260px', height: '260px', borderRadius: '50%',
+        background: 'rgba(255,255,255,0.06)', pointerEvents: 'none',
+      }} />
+
+      {/* Logo */}
+      <div className="text-center mb-6 relative z-10">
+        <span className="text-white text-3xl font-extrabold tracking-tight drop-shadow-md">
+          Next<span style={{ color: 'rgba(255,255,255,0.65)' }}>Flat</span>
+        </span>
+      </div>
+
+      <div className="max-w-md w-full relative z-10">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Iniciar sesión
+            <h2 className="text-3xl font-bold text-gray-900 mb-1">
+              Bienvenido de nuevo
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-500 text-sm">
               ¿No tienes cuenta?{' '}
-              <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+              <Link to="/register" className="font-semibold transition-colors" style={{ color: '#e8385d' }}>
                 Regístrate aquí
               </Link>
             </p>
           </div>
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-4 w-full">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Correo electrónico
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="tu@email.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Contraseña
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                  placeholder="Tu contraseña"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            
-            {/* Opcional: Enlace de "Olvidé mi contraseña" para darle un toque más pro */}
-            <div className="flex items-center justify-end mt-2">
-              <div className="text-sm">
-                <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-                  ¿Olvidaste tu contraseña?
-                </a>
-              </div>
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Correo electrónico
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none transition-colors"
+                onFocus={e => e.target.style.boxShadow = '0 0 0 2px #e8385d55'}
+                onBlur={e => e.target.style.boxShadow = ''}
+                placeholder="tu@email.com"
+                value={formData.email}
+                onChange={handleChange}
+              />
             </div>
 
-            <div className="pt-2">
-              <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Contraseña
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none transition-colors"
+                onFocus={e => e.target.style.boxShadow = '0 0 0 2px #e8385d55'}
+                onBlur={e => e.target.style.boxShadow = ''}
+                placeholder="Tu contraseña"
+                value={formData.password}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Forgot password */}
+            <div className="flex justify-end">
+              <a href="#" className="text-xs font-medium transition-colors" style={{ color: '#e8385d' }}>
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+
+            {/* Submit */}
+            <div className="pt-1">
+              <button
+                type="submit"
+                className="w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 100%)' }}
+              >
                 Entrar
-              </Button>
+              </button>
             </div>
           </form>
         </div>
+
+        <p className="text-center text-white/60 text-xs mt-6">
+          © 2025 NextFlat · Encuentra tu próximo hogar
+        </p>
       </div>
     </div>
   );
