@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { Heart, X, MapPin } from 'lucide-react';
+import { Heart, X, MapPin, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function HoverPropertyCard({ item, onLike, onDislike }) {
     const [hoverState, setHoverState] = useState('center');
     const cardRef = useRef(null);
     const controls = useAnimation();
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (hoverState === 'left') {
@@ -38,6 +40,7 @@ export default function HoverPropertyCard({ item, onLike, onDislike }) {
     const handleClick = () => {
         if (hoverState === 'left' && onDislike) onDislike(item);
         if (hoverState === 'right' && onLike) onLike(item);
+        if (hoverState === 'center') navigate(`/property/${item.id}`);
     };
 
     const imgUrl = item.fotoPrincipalUrl || item.images?.[0] || '';
@@ -172,6 +175,17 @@ export default function HoverPropertyCard({ item, onLike, onDislike }) {
                     )}
                 </div>
             </motion.div>
+
+            {/* ═══ FIXED UI ELEMENTS (No se mueven con la imagen) ═══ */}
+            <div className="absolute bottom-10 left-0 right-0 z-30 flex justify-center pointer-events-auto">
+                <button 
+                    onClick={(e) => { e.stopPropagation(); navigate(`/property/${item.id}`); }}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-white/30 backdrop-blur-xl hover:bg-white/40 text-white rounded-full border border-white/50 font-bold text-sm transition-all active:scale-95 shadow-xl group"
+                >
+                    <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Ver Detalles
+                </button>
+            </div>
         </div>
     );
 }

@@ -3,6 +3,7 @@ import AppLayout from './components/layout/AppLayout';
 import TenantFeed from './pages/TenantFeed';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
+import PropertyDetails from './pages/PropertyDetails';
 import './App.css';
 
 // Placeholder pages — will be built by the team later
@@ -50,6 +51,7 @@ function App() {
           <Route path="/feed" element={<TenantFeed />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/filtros" element={<FiltrosPlaceholder />} />
           <Route path="/matches" element={<MatchesPlaceholder />} />
           <Route path="/perfil" element={<PerfilPlaceholder />} />

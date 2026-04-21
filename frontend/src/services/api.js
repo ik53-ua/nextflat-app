@@ -15,3 +15,8 @@ export const processSwipe = async (swipeRequest) => {
   const response = await api.post(`/feed/swipe`, swipeRequest);
   return response.data;
 };
+
+export const getPropertyDetails = async (id) => {
+  const response = await api.get(`/inmuebles/${id}`);
+  return response.data;
+};

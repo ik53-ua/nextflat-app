@@ -17,7 +17,7 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/api/usuarios/registro", "/api/usuarios/login", "/api/pisos", "/api/pisos/**", "/api/feed/**").permitAll()
+                .requestMatchers("/api/usuarios/registro", "/api/usuarios/login", "/api/pisos", "/api/pisos/**", "/api/feed/**", "/api/inmuebles/**").permitAll()
                 .anyRequest().authenticated()
             )
             .httpBasic(basic -> basic.disable())  
