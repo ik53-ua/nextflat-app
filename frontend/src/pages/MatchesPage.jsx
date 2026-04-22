@@ -2,10 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchesForUser } from '../services/api';
 
-// TODO: reemplaza este ID por el del usuario logueado cuando 
-// tengáis AuthContext implementado
-const USUARIO_ID_TEMPORAL = 1;
-
 function formatFecha(fechaISO) {
   if (!fechaISO) return '';
   const fecha = new Date(fechaISO);
@@ -29,7 +25,6 @@ function MatchCard({ match, onClick }) {
       onClick={() => onClick(match.matchId)}
       className="w-full flex items-center gap-4 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
     >
-      {/* Avatar */}
       <div className="flex-shrink-0">
         {match.imagenContacto && !imgError ? (
           <img
@@ -43,7 +38,6 @@ function MatchCard({ match, onClick }) {
         )}
       </div>
 
-      {/* Texto */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-slate-800 truncate">{match.nombreContacto}</p>
         {match.subtitulo && (
@@ -51,7 +45,6 @@ function MatchCard({ match, onClick }) {
         )}
       </div>
 
-      {/* Fecha */}
       <span className="text-xs text-slate-400 flex-shrink-0">
         {formatFecha(match.fechaMatch)}
       </span>
@@ -75,14 +68,27 @@ export default function MatchesPage() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [usuarioId, setUsuarioId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getMatchesForUser(USUARIO_ID_TEMPORAL)
+    const usuarioGuardado = localStorage.getItem('usuarioLogueado');
+    if (usuarioGuardado) {
+      const user = JSON.parse(usuarioGuardado);
+      setUsuarioId(user.id);
+    } else {
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!usuarioId) return;
+    setLoading(true);
+    getMatchesForUser(usuarioId)
       .then(setMatches)
       .catch(() => setError('No se pudieron cargar los matches. Inténtalo de nuevo.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [usuarioId]);
 
   const handleMatchClick = (matchId) => {
     navigate(`/chat/${matchId}`);
