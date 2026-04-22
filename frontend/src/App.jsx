@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import PropertyDetails from './pages/PropertyDetails';
 import ProfilePage from './pages/ProfilePage';
+import OnboardingPage from './pages/OnboardingPage';
 import './App.css';
 
 // Placeholder pages — will be built by the team later
@@ -57,6 +58,7 @@ function App() {
           <Route path="/matches" element={<MatchesPlaceholder />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/" element={<Navigate to="/feed" replace />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
         </Routes>
       </AppLayout>
     </Router>
