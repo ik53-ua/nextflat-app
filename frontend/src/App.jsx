@@ -4,6 +4,7 @@ import TenantFeed from './pages/TenantFeed';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import PropertyDetails from './pages/PropertyDetails';
+import ProfilePage from './pages/ProfilePage';
 import './App.css';
 
 // Placeholder pages — will be built by the team later
@@ -54,7 +55,7 @@ function App() {
           <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/filtros" element={<FiltrosPlaceholder />} />
           <Route path="/matches" element={<MatchesPlaceholder />} />
-          <Route path="/perfil" element={<PerfilPlaceholder />} />
+          <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/" element={<Navigate to="/feed" replace />} />
         </Routes>
       </AppLayout>

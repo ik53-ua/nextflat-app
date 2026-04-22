@@ -31,14 +31,49 @@ public class UsuarioController {
     public ResponseEntity<?> iniciarSesion(@RequestBody Usuario credenciales) {
         try {
             Optional<Usuario> usuarioEncontrado = usuarioRepository.findAll().stream()
-                    .filter(u -> u.getEmail().equals(credenciales.getEmail()) && 
-                                 u.getPassword().equals(credenciales.getPassword()))
+                    .filter(u -> u.getEmail().equals(credenciales.getEmail()) &&
+                            u.getPassword().equals(credenciales.getPassword()))
                     .findFirst();
 
             if (usuarioEncontrado.isPresent()) {
                 return ResponseEntity.ok(usuarioEncontrado.get()); // Login correcto
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas"); // Fallo
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Usuario> actualizarPerfil(@PathVariable Long id, @RequestBody Usuario datosActualizados) {
+        try {
+            Optional<Usuario> usuarioExistente = usuarioRepository.findById(id);
+
+            if (usuarioExistente.isPresent()) {
+                Usuario usuario = usuarioExistente.get();
+
+                // 2. Actualizamos SOLO los campos permitidos basándonos en tu Usuario.java
+                if (datosActualizados.getNombre() != null) {
+                    usuario.setNombre(datosActualizados.getNombre());
+                }
+                if (datosActualizados.getProfesion() != null) {
+                    usuario.setProfesion(datosActualizados.getProfesion());
+                }
+                if (datosActualizados.getFechaNacimiento() != null) {
+                    usuario.setFechaNacimiento(datosActualizados.getFechaNacimiento());
+                }
+                if (datosActualizados.getBio() != null) {
+                    usuario.setBio(datosActualizados.getBio());
+                }
+                if (datosActualizados.getFotoPerfil() != null) {
+                    usuario.setFotoPerfil(datosActualizados.getFotoPerfil());
+                }
+
+                Usuario usuarioGuardado = usuarioRepository.save(usuario);
+                return ResponseEntity.ok(usuarioGuardado);
+            } else {
+                return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
