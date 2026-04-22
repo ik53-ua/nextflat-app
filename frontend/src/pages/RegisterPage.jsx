@@ -51,16 +51,16 @@ const RegisterPage = () => {
       if (response.ok) {
         const userData = await response.json();
         localStorage.setItem('usuarioLogueado', JSON.stringify(userData));
-        alert('¡Registro completado con éxito!');
-        window.location.href = '/';
+        // Aquí usamos la navegación correcta
+        navigate('/onboarding');
       } else {
-        const errorData = await response.json();
-        alert(`Error en el registro: ${errorData.message || 'Revisa los datos'}`);
+        // Evitamos el error del JSON cuando el servidor falla
+        alert('Error en el registro. Es posible que el email ya esté en uso.');
       }
 
     } catch (error) {
       console.error('Error al conectar con el servidor:', error);
-      alert('No se ha podido conectar con el servidor. ¿Está el backend encendido?');
+      alert('No se ha podido conectar con el servidor.');
     }
   };
 

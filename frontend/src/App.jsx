@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import PropertyDetails from './pages/PropertyDetails';
 import ProfilePage from './pages/ProfilePage';
+import OnboardingPage from './pages/OnboardingPage';
 import MatchesPage from './pages/MatchesPage';
 import './App.css';
 
@@ -58,6 +59,7 @@ function App() {
           <Route path="/matches" element={<MatchesPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/" element={<Navigate to="/feed" replace />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
         </Routes>
       </AppLayout>
     </Router>
