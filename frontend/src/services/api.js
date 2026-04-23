@@ -20,3 +20,8 @@ export const getPropertyDetails = async (id) => {
   const response = await api.get(`/inmuebles/${id}`);
   return response.data;
 };
+
+export const getMatchesForUser = async (userId) => {
+  const response = await api.get(`/matches/${userId}`);
+  return response.data;
+};
