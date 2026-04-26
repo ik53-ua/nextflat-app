@@ -18,9 +18,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/usuarios/**", "/api/pisos", "/api/pisos/**", "/api/feed/**",
-                                "/api/inmuebles/**","/api/matches/**")
+                                "/api/inmuebles/**","/api/matches/**", "/api/propietario-feed/**")
                         .permitAll()
                         .anyRequest().authenticated())
+
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable());
 

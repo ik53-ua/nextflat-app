@@ -37,7 +37,12 @@ const LoginPage = () => {
       if (response.ok) {
         const userData = await response.json();
         localStorage.setItem('usuarioLogueado', JSON.stringify(userData));
-        navigate('/');
+        // Redirigir según rol
+        if (userData.rol === 'PROPIETARIO') {
+          navigate('/owner-feed');
+        } else {
+          navigate('/feed');
+        }
       } else {
         alert('Credenciales incorrectas. Por favor, revisa tu correo y contraseña.');
       }

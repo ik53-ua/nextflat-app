@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Home, MessageCircle, SlidersHorizontal } from 'lucide-react';
+import { Home, MessageCircle, SlidersHorizontal, Users } from 'lucide-react';
 
 // Profile Avatar
 function ProfileAvatar({ user }) {
@@ -34,24 +34,20 @@ function ProfileAvatar({ user }) {
     );
 }
 
-// Bottom Tab Item
-const tabs = [
-    { to: '/filtros', label: 'Filtros',   Icon: SlidersHorizontal },
-    { to: '/feed',    label: 'Descubrir', Icon: Home },
-    { to: '/matches', label: 'Matches',   Icon: MessageCircle },
-];
-
-function BottomTab({ to, label, Icon }) {
+// Bottom Tab Item — defined outside to stay pure (tabs array is now role-dynamic)
+function BottomTab({ to, label, Icon, activeAlso }) {
     return (
         <NavLink
             to={to}
-            className={({ isActive }) =>
-                `flex flex-col items-center justify-center flex-1 py-2 transition-colors duration-200 ${
-                    isActive
+            className={({ isActive }) => {
+                // also highlight when on a related sub-route (activeAlso list)
+                const extraActive = activeAlso?.some(path => window.location.pathname.startsWith(path));
+                return `flex flex-col items-center justify-center flex-1 py-2 transition-colors duration-200 ${
+                    isActive || extraActive
                         ? 'text-[#e8385d]'
                         : 'text-slate-400 hover:text-slate-600'
-                }`
-            }
+                }`;
+            }}
         >
             <Icon className="w-5 h-5 mb-0.5" strokeWidth={2} />
             <span className="text-[11px] font-semibold tracking-wide">{label}</span>
@@ -73,12 +69,15 @@ export default function AppLayout({ children }) {
         navigate('/login'); // Forzamos la redirección al login
     };
 
+    const isPropietario = user?.rol === 'PROPIETARIO';
+    const homeRoute = isPropietario ? '/owner-feed' : '/feed';
+
     return (
         <div className="h-screen w-full flex flex-col bg-slate-50 overflow-hidden">
             <header className="flex justify-between items-center px-5 py-3 bg-white shadow-sm z-20 relative">
                 <h1 className="text-2xl font-extrabold tracking-tight"
                     style={{ color: '#e8385d' }}>
-                    <Link to="/">NextFlat</Link>
+                    <Link to={homeRoute}>NextFlat</Link>
                 </h1>
                 
                 <div className="flex items-center gap-3">
@@ -115,13 +114,27 @@ export default function AppLayout({ children }) {
                 {children}
             </main>
 
-            {user && (
-                <nav className="flex bg-white border-t border-slate-200 z-20 safe-area-bottom">
-                    {tabs.map(tab => (
-                        <BottomTab key={tab.to} {...tab} />
-                    ))}
-                </nav>
-            )}
+            {user && (() => {
+                const isPropietario = user.rol === 'PROPIETARIO';
+                const tabs = isPropietario
+                    ? [
+                        { to: '/filtros',    label: 'Filtros',     Icon: SlidersHorizontal },
+                        { to: '/owner-feed', label: 'Candidatos',  Icon: Users },
+                        { to: '/matches',    label: 'Matches',     Icon: MessageCircle },
+                    ]
+                    : [
+                        { to: '/filtros', label: 'Filtros',   Icon: SlidersHorizontal },
+                        { to: '/feed',    label: 'Descubrir', Icon: Home },
+                        { to: '/matches', label: 'Matches',   Icon: MessageCircle },
+                    ];
+                return (
+                    <nav className="flex bg-white border-t border-slate-200 z-20 safe-area-bottom">
+                        {tabs.map(tab => (
+                            <BottomTab key={tab.to} {...tab} />
+                        ))}
+                    </nav>
+                );
+            })()}
         </div>
     );
 }

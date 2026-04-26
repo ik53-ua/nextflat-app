@@ -53,10 +53,17 @@ export default function TenantFeed() {
   const [flats, setFlats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLoginGate, setShowLoginGate] = useState(false);
+  const [showIncompleteProfileGate, setShowIncompleteProfileGate] = useState(false);
 
   const usuarioGuardado = localStorage.getItem("usuarioLogueado");
   const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
   const userId = currentUser ? currentUser.id : null;
+  
+  // Un perfil se considera completo si tiene foto, profesión y biografía
+  const isProfileComplete = currentUser && 
+    currentUser.fotoPerfil && 
+    currentUser.profesion && 
+    currentUser.bio;
 
   const fetchFeed = async () => {
     // If user is not logged in → show dummy cards immediately
@@ -105,6 +112,12 @@ export default function TenantFeed() {
     // If not logged in → intercept and show login gate modal
     if (!userId) {
       setShowLoginGate(true);
+      return;
+    }
+    
+    // Si falta información del perfil, bloqueamos la acción y mostramos el aviso
+    if (!isProfileComplete) {
+      setShowIncompleteProfileGate(true);
       return;
     }
 
@@ -232,6 +245,66 @@ export default function TenantFeed() {
                 className="mt-5 text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer"
               >
                 Seguir explorando sin cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Incomplete Profile Gate Modal ═══ */}
+      {showIncompleteProfileGate && (
+        <div
+          className="absolute inset-0 z-50 flex items-end justify-center"
+          style={{
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            paddingBottom: "env(safe-area-inset-bottom, 24px)",
+          }}
+          onClick={() => setShowIncompleteProfileGate(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 mb-4 bg-white rounded-3xl shadow-2xl overflow-hidden"
+            style={{ animation: "nfSlideUp 0.38s cubic-bezier(0.34,1.56,0.64,1) both" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                height: "5px",
+                background: "linear-gradient(90deg, #e8385d 0%, #ff6b6b 100%)",
+              }}
+            />
+
+            <div className="px-7 pt-6 pb-7 text-center">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ background: "linear-gradient(135deg, #ffe0e6 0%, #ffd6dc 100%)" }}
+              >
+                <span style={{ fontSize: "2rem" }}>👤</span>
+              </div>
+
+              <h2 className="text-2xl font-extrabold text-slate-900 mb-2 leading-tight">
+                Completa tu perfil
+              </h2>
+              <p className="text-slate-500 text-sm mb-6 leading-relaxed px-2">
+                Los propietarios necesitan saber un poco sobre ti antes de poder interactuar. ¡Sube una foto y cuéntales a qué te dedicas!
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <a
+                  href="/perfil"
+                  className="block w-full py-3.5 rounded-xl font-bold text-white text-center text-sm transition-all duration-200 hover:opacity-90 active:scale-95"
+                  style={{ background: "linear-gradient(135deg, #e8385d 0%, #ff6b6b 100%)" }}
+                >
+                  Completar perfil ahora
+                </a>
+              </div>
+
+              <button
+                onClick={() => setShowIncompleteProfileGate(false)}
+                className="mt-5 text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer"
+              >
+                Cerrar aviso
               </button>
             </div>
           </div>
