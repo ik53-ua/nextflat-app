@@ -119,21 +119,24 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 overflow-y-auto pb-20">
-      {/* Cabecera estilo NextFlat */}
-      <div className="bg-white px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-        <button 
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 rounded-full hover:bg-slate-100 transition-colors text-slate-700"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-lg font-black text-slate-900 tracking-tight">Editar Perfil</h1>
-        <div className="w-10"></div> 
-      </div>
+    <div 
+      className="flex flex-col h-full overflow-y-auto overflow-x-hidden pb-20 relative"
+      style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)' }}
+    >
+      {/* Decorative blobs */}
+      <div style={{
+        position: 'absolute', top: '-80px', right: '-80px',
+        width: '320px', height: '320px', borderRadius: '50%',
+        background: 'rgba(255,255,255,0.08)', pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-60px', left: '-60px',
+        width: '260px', height: '260px', borderRadius: '50%',
+        background: 'rgba(255,255,255,0.06)', pointerEvents: 'none',
+      }} />
 
-      {/* Contenedor principal que se había borrado */}
-      <div className="px-6 py-6 max-w-lg mx-auto w-full">
+      <div className="px-6 py-8 max-w-lg mx-auto w-full relative z-10 mt-4 mb-8">
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
         {/* Avatar */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative">
@@ -256,6 +259,7 @@ export default function ProfilePage() {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

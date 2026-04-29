@@ -25,3 +25,16 @@ export const getMatchesForUser = async (userId) => {
   const response = await api.get(`/matches/${userId}`);
   return response.data;
 };
+
+// ── US-008: Feed de Candidatos (Swipe del Propietario) ──────────────────────
+
+export const getCandidatosParaPropietario = async (propietarioId) => {
+  const response = await api.get(`/propietario-feed/${propietarioId}`);
+  return response.data;
+};
+
+export const swipeCandidato = async (swipeRequest) => {
+  // body: { propietarioId, candidatoId, tipoInteraccion }
+  const response = await api.post(`/propietario-feed/swipe`, swipeRequest);
+  return response.data;
+};

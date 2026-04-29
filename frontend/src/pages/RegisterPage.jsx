@@ -220,41 +220,7 @@ const RegisterPage = () => {
               <input type="hidden" name="rol" value={formData.rol} />
             </div>
 
-            {/* Fecha de nacimiento */}
-            <div>
-              <label htmlFor="fechaNacimiento" className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha de nacimiento
-              </label>
-              <input
-                id="fechaNacimiento"
-                name="fechaNacimiento"
-                type="date"
-                required
-                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none transition-colors"
-                onFocus={e => e.target.style.boxShadow = '0 0 0 2px #e8385d55'}
-                onBlur={e => e.target.style.boxShadow = ''}
-                value={formData.fechaNacimiento}
-                onChange={handleChange}
-              />
-            </div>
 
-            {/* Profesión */}
-            <div>
-              <label htmlFor="profesion" className="block text-sm font-medium text-gray-700 mb-1">
-                Profesión <span className="text-gray-400 font-normal">(opcional)</span>
-              </label>
-              <input
-                id="profesion"
-                name="profesion"
-                type="text"
-                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none transition-colors"
-                onFocus={e => e.target.style.boxShadow = '0 0 0 2px #e8385d55'}
-                onBlur={e => e.target.style.boxShadow = ''}
-                placeholder="Tu profesión"
-                value={formData.profesion}
-                onChange={handleChange}
-              />
-            </div>
 
             {/* Submit */}
             <div className="pt-2">

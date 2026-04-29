@@ -7,7 +7,19 @@ import PropertyDetails from './pages/PropertyDetails';
 import ProfilePage from './pages/ProfilePage';
 import OnboardingPage from './pages/OnboardingPage';
 import MatchesPage from './pages/MatchesPage';
+import OwnerFeed from './pages/OwnerFeed';
 import './App.css';
+
+// Redirect raíz según rol del usuario logueado
+function RootRedirect() {
+  const usuarioGuardado = localStorage.getItem('usuarioLogueado');
+  const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+  if (user?.rol === 'PROPIETARIO') {
+    return <Navigate to="/owner-feed" replace />;
+  }
+  return <Navigate to="/feed" replace />;
+}
+
 
 // Placeholder pages — will be built by the team later
 function MatchesPlaceholder() {
@@ -52,13 +64,14 @@ function App() {
       <AppLayout>
         <Routes>
           <Route path="/feed" element={<TenantFeed />} />
+          <Route path="/owner-feed" element={<OwnerFeed />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/filtros" element={<FiltrosPlaceholder />} />
           <Route path="/matches" element={<MatchesPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
-          <Route path="/" element={<Navigate to="/feed" replace />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
         </Routes>
       </AppLayout>
