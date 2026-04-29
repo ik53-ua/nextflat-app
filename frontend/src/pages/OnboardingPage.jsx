@@ -87,87 +87,109 @@ export default function OnboardingPage() {
   const isInvalid = !photoFile || !formData.profesion || !formData.bio;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center px-6 py-12">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-black text-slate-900">¡Casi listo!</h1>
-          <p className="text-slate-500 mt-2 font-medium">Completa tu perfil para empezar a buscar</p>
-        </div>
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)',
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: '-80px', right: '-80px',
+        width: '320px', height: '320px', borderRadius: '50%',
+        background: 'rgba(255,255,255,0.08)', pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-60px', left: '-60px',
+        width: '260px', height: '260px', borderRadius: '50%',
+        background: 'rgba(255,255,255,0.06)', pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', top: '40%', left: '-40px',
+        width: '160px', height: '160px', borderRadius: '50%',
+        background: 'rgba(255,255,255,0.05)', pointerEvents: 'none',
+      }} />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Subida de Foto Obligatoria */}
-          <div className="flex flex-col items-center">
-            <div 
-              onClick={() => fileInputRef.current.click()}
-              className={`w-32 h-32 rounded-full border-4 flex items-center justify-center cursor-pointer overflow-hidden transition-all ${fotoPreview ? 'border-emerald-400' : 'border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100'}`}
-            >
-              {fotoPreview ? (
-                <img src={fotoPreview} className="w-full h-full object-cover" alt="Preview" />
-              ) : (
-                <div className="text-center p-4">
-                  <Camera className="w-8 h-8 text-slate-400 mx-auto" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 block">Añadir foto</span>
-                </div>
-              )}
-            </div>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-            {!fotoPreview && <p className="text-xs text-[#e8385d] font-bold mt-2">* La foto es obligatoria</p>}
+      <div className="max-w-md w-full relative z-10">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-black text-slate-900">¡Casi listo!</h1>
+            <p className="text-slate-500 mt-2 font-medium">Completa tu perfil para empezar a buscar</p>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-bold text-slate-700">¿A qué te dedicas?</label>
-              <input 
-                name="profesion" 
-                type="text"
-                required
-                placeholder="Ej: Estudiante de Máster, Desarrollador..."
-                className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
-                value={formData.profesion}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-slate-700">Fecha de nacimiento</label>
-              <input 
-                name="fechaNacimiento" 
-                type="date"
-                required
-                className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
-                value={formData.fechaNacimiento}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between items-end">
-                <label className="text-sm font-bold text-slate-700">Biografía</label>
-                <span className={`text-[10px] font-bold ${formData.bio.length > 450 ? 'text-[#e8385d]' : 'text-slate-400'}`}>
-                  {formData.bio.length} / 500
-                </span>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex flex-col items-center">
+              <div 
+                onClick={() => fileInputRef.current.click()}
+                className={`w-32 h-32 rounded-full border-4 flex items-center justify-center cursor-pointer overflow-hidden transition-all ${fotoPreview ? 'border-emerald-400' : 'border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100'}`}
+              >
+                {fotoPreview ? (
+                  <img src={fotoPreview} className="w-full h-full object-cover" alt="Preview" />
+                ) : (
+                  <div className="text-center p-4">
+                    <Camera className="w-8 h-8 text-slate-400 mx-auto" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 block">Añadir foto</span>
+                  </div>
+                )}
               </div>
-              <textarea 
-                name="bio"
-                rows="4"
-                required
-                placeholder="Cuéntale a los propietarios por qué serías un buen inquilino..."
-                className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none resize-none"
-                value={formData.bio}
-                onChange={handleChange}
-              />
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+              {!fotoPreview && <p className="text-xs text-[#e8385d] font-bold mt-2">* La foto es obligatoria</p>}
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={isInvalid || loading}
-            className={`w-full py-4 rounded-xl font-black text-white flex items-center justify-center gap-2 transition-all ${isInvalid || loading ? 'bg-slate-200 cursor-not-allowed' : 'shadow-lg hover:opacity-90'}`}
-            style={!(isInvalid || loading) ? { background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 100%)' } : {}}
-          >
-            {loading ? <Loader2 className="animate-spin" /> : <>Finalizar perfil <ArrowRight className="w-4 h-4" /></>}
-          </button>
-        </form>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-bold text-slate-700">¿A qué te dedicas?</label>
+                <input 
+                  name="profesion" 
+                  type="text"
+                  required
+                  placeholder="Ej: Estudiante de Máster, Desarrollador..."
+                  className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                  value={formData.profesion}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-slate-700">Fecha de nacimiento</label>
+                <input 
+                  name="fechaNacimiento" 
+                  type="date"
+                  required
+                  className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                  value={formData.fechaNacimiento}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-end">
+                  <label className="text-sm font-bold text-slate-700">Biografía</label>
+                  <span className={`text-[10px] font-bold ${formData.bio.length > 450 ? 'text-[#e8385d]' : 'text-slate-400'}`}>
+                    {formData.bio.length} / 500
+                  </span>
+                </div>
+                <textarea 
+                  name="bio"
+                  rows="4"
+                  required
+                  placeholder="Cuéntale a los propietarios por qué serías un buen inquilino..."
+                  className="w-full mt-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none resize-none"
+                  value={formData.bio}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isInvalid || loading}
+              className={`w-full py-4 rounded-xl font-black text-white flex items-center justify-center gap-2 transition-all ${isInvalid || loading ? 'bg-slate-200 cursor-not-allowed' : 'shadow-lg hover:opacity-90'}`}
+              style={!(isInvalid || loading) ? { background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 100%)' } : {}}
+            >
+              {loading ? <Loader2 className="animate-spin" /> : <>Finalizar perfil <ArrowRight className="w-4 h-4" /></>}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
