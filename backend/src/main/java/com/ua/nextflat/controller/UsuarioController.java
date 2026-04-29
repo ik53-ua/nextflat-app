@@ -2,6 +2,8 @@ package com.ua.nextflat.controller;
 
 import com.ua.nextflat.model.Usuario;
 import com.ua.nextflat.repository.UsuarioRepository;
+import com.ua.nextflat.service.UsuarioService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private UsuarioService usuarioService;
 
     @PostMapping("/registro")
     public ResponseEntity<Usuario> registrarUsuario(@RequestBody Usuario nuevoUsuario) {
@@ -77,6 +82,22 @@ public class UsuarioController {
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<?> actualizarPassword(@PathVariable Long id,
+            @RequestBody java.util.Map<String, String> passwords) {
+        String actual = passwords.get("currentPassword");
+        String nueva = passwords.get("newPassword");
+
+        // Llamamos al servicio con el nombre del método en español
+        boolean exito = usuarioService.actualizarPassword(id, actual, nueva);
+
+        if (exito) {
+            return ResponseEntity.ok().body("Contraseña actualizada correctamente");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("La contraseña actual es incorrecta");
         }
     }
 }
