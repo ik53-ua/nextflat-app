@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, User, Briefcase, Calendar, FileText, Camera, CheckCircle2, Loader2 } from 'lucide-react';
+import { uploadImage } from '../services/supabase';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef(null);
   const [fotoPreview, setFotoPreview] = useState(null);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [photoFile, setPhotoFile] = useState(null);
 
   // Al cargar la página, sacamos los datos del usuario logueado
   useEffect(() => {
@@ -52,21 +54,15 @@ export default function ProfilePage() {
     fileInputRef.current.click();
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    const objectUrl = URL.createObjectURL(file);
-    setFotoPreview(objectUrl);
-
-    setSubiendoFoto(true);
-    try {
-      // Provisionalmente simulamos que se ha subido
-      setFormData(prev => ({ ...prev, fotoPerfil: objectUrl })); 
-    } catch (error) {
-      alert("Error al procesar la imagen");
-    } finally {
-      setSubiendoFoto(false);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setFotoPreview(url);
+      
+      setPhotoFile(file);
+      
+      setFormData({ ...formData, fotoPerfil: url });
     }
   };
     
@@ -76,14 +72,33 @@ export default function ProfilePage() {
     setSuccess(false);
 
     try {
+      let finalPhotoUrl = formData.fotoPerfil;
+
+      // 1. Si el usuario seleccionó una foto nueva, la subimos a la nube
+      if (photoFile) {
+        const uploadedUrl = await uploadImage('avatars', photoFile);
+        
+        if (!uploadedUrl) {
+          alert("Error al subir la imagen a la nube");
+          setLoading(false);
+          return;
+        }
+        
+        finalPhotoUrl = uploadedUrl; // Guardamos la URL pública real (https://...)
+      }
+
+      // 2. Preparamos el objeto final con la URL buena (la de Supabase o la que ya tenía)
+      const payload = { ...formData, fotoPerfil: finalPhotoUrl };
+
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
       
+      // 3. Enviamos el payload al backend
       const response = await fetch(`${apiUrl}/api/usuarios/${usuarioId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {

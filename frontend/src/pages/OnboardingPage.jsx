@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Briefcase, Calendar, FileText, Camera, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { uploadImage } from '../services/supabase';
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function OnboardingPage() {
   
   const [fotoPreview, setFotoPreview] = useState(null);
   const [usuarioId, setUsuarioId] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
 
   useEffect(() => {
     const usuario = JSON.parse(localStorage.getItem('usuarioLogueado'));
@@ -33,11 +35,11 @@ export default function OnboardingPage() {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const file = e.target.files[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setFotoPreview(url);
-      setFormData({ ...formData, fotoPerfil: url });
+      setPhotoFile(file);
     }
   };
 
@@ -46,17 +48,34 @@ export default function OnboardingPage() {
     setLoading(true);
 
     try {
+      let finalPhotoUrl = formData.fotoPerfil;
+
+      if (photoFile) {
+        const uploadedUrl = await uploadImage('avatars', photoFile);
+      
+        if (!uploadedUrl) {
+          alert("Error al subir la imagen a la nube");
+          setLoading(false);
+          return;
+        }
+      
+        finalPhotoUrl = uploadedUrl;
+      }
+
+      
+      const payload = { ...formData, fotoPerfil: finalPhotoUrl };
+
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
       const response = await fetch(`${apiUrl}/api/usuarios/${usuarioId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        const userActualizado = await response.json();
-        localStorage.setItem('usuarioLogueado', JSON.stringify(userActualizado));
-        navigate('/feed'); // Tras el onboarding, vamos al feed
+        const updatedUser = await response.json();
+        localStorage.setItem('usuarioLogueado', JSON.stringify(updatedUser));
+        navigate('/feed'); 
       }
     } catch (error) {
       alert("Error al finalizar el perfil");
@@ -65,8 +84,7 @@ export default function OnboardingPage() {
     }
   };
 
-  // El botón se bloquea si no hay foto, profesión o bio (según US 002)
-  const isInvalid = !formData.fotoPerfil || !formData.profesion || !formData.bio;
+  const isInvalid = !photoFile || !formData.profesion || !formData.bio;
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center px-6 py-12">
