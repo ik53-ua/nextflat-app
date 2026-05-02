@@ -26,17 +26,19 @@ public class FeedService {
 
     @Autowired
     public FeedService(InmuebleRepository inmuebleRepository,
-                       InteraccionRepository interaccionRepository,
-                       FotoInmuebleRepository fotoInmuebleRepository,
-                       UsuarioRepository usuarioRepository) {
+            InteraccionRepository interaccionRepository,
+            FotoInmuebleRepository fotoInmuebleRepository,
+            UsuarioRepository usuarioRepository) {
         this.inmuebleRepository = inmuebleRepository;
         this.interaccionRepository = interaccionRepository;
         this.fotoInmuebleRepository = fotoInmuebleRepository;
         this.usuarioRepository = usuarioRepository;
     }
 
-    public List<FeedInmuebleDTO> getFeedForUser(Long usuarioId) {
-        List<Inmueble> inmuebles = inmuebleRepository.findFeedForUser(usuarioId);
+    public List<FeedInmuebleDTO> getFeedForUser(Long usuarioId, String municipio, Double precioMax) {
+        String municipioDB = (municipio != null && !municipio.trim().isEmpty()) ? municipio.trim().toLowerCase() : null;
+
+        List<Inmueble> inmuebles = inmuebleRepository.findFeedForUser(usuarioId, municipioDB, precioMax);
 
         return inmuebles.stream().map(inmueble -> {
             FeedInmuebleDTO dto = new FeedInmuebleDTO();
@@ -60,10 +62,12 @@ public class FeedService {
 
     public void processSwipe(SwipeRequestDTO request) {
         Usuario usuarioOrigen = usuarioRepository.findById(request.getUsuarioOrigenId())
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con ID: " + request.getUsuarioOrigenId()));
-                
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Usuario no encontrado con ID: " + request.getUsuarioOrigenId()));
+
         Inmueble inmuebleDestino = inmuebleRepository.findById(request.getInmuebleDestinoId())
-                .orElseThrow(() -> new IllegalArgumentException("Inmueble no encontrado con ID: " + request.getInmuebleDestinoId()));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Inmueble no encontrado con ID: " + request.getInmuebleDestinoId()));
 
         Interaccion interaccion = new Interaccion();
         interaccion.setUsuarioOrigen(usuarioOrigen);

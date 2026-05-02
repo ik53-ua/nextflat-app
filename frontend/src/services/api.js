@@ -4,9 +4,18 @@ const api = axios.create({
   baseURL: "http://localhost:8080/api",
 });
 
-export const getFeedForUser = async (userId) => {
-  // Path variable para coincidir con @PathVariable del controlador
-  const response = await api.get(`/feed/${userId}`);
+export const getFeedForUser = async (userId, filtros = {}) => {
+  const params = new URLSearchParams();
+  
+  if (filtros.municipio && filtros.municipio.trim() !== "") {
+    params.append('municipio', filtros.municipio.trim());
+  }
+  
+  if (filtros.precioMax) {
+    params.append('precioMax', filtros.precioMax);
+  }
+  
+  const response = await api.get(`/feed/${userId}?${params.toString()}`);
   return response.data;
 };
 

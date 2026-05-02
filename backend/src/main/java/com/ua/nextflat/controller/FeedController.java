@@ -22,8 +22,12 @@ public class FeedController {
     }
 
     @GetMapping("/{usuarioId}")
-    public ResponseEntity<List<FeedInmuebleDTO>> getFeedForUser(@PathVariable Long usuarioId) {
-        List<FeedInmuebleDTO> feed = feedService.getFeedForUser(usuarioId);
+    public ResponseEntity<List<FeedInmuebleDTO>> getFeedForUser(
+            @PathVariable Long usuarioId,
+            @RequestParam(required = false) String municipio,
+            @RequestParam(required = false) Double precioMax) {
+        // Le pasamos los nuevos filtros al servicio
+        List<FeedInmuebleDTO> feed = feedService.getFeedForUser(usuarioId, municipio, precioMax);
         return ResponseEntity.ok(feed);
     }
 

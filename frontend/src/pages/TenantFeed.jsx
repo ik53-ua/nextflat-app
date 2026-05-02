@@ -55,6 +55,14 @@ export default function TenantFeed() {
   const [showLoginGate, setShowLoginGate] = useState(false);
   const [showIncompleteProfileGate, setShowIncompleteProfileGate] = useState(false);
 
+  const [showFilters, setShowFilters] = useState(false);
+  
+  const [municipioFilter, setMunicipioFilter] = useState("");
+  const [precioMaxFilter, setPrecioMaxFilter] = useState(1500); 
+  
+  const [appliedMunicipio, setAppliedMunicipio] = useState("");
+  const [appliedPrecioMax, setAppliedPrecioMax] = useState(null);
+
   const usuarioGuardado = localStorage.getItem("usuarioLogueado");
   const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
   const userId = currentUser ? currentUser.id : null;
@@ -65,8 +73,7 @@ export default function TenantFeed() {
     currentUser.profesion && 
     currentUser.bio;
 
-  const fetchFeed = async () => {
-    // If user is not logged in → show dummy cards immediately
+  const fetchFeed = async (municipio = appliedMunicipio, precioMax = appliedPrecioMax) => {
     if (!userId) {
       setFlats(DUMMY_FLATS);
       setLoading(false);
@@ -75,7 +82,11 @@ export default function TenantFeed() {
 
     setLoading(true);
     try {
-      const data = await getFeedForUser(userId);
+      // Pasamos los filtros actuales
+      const data = await getFeedForUser(userId, { 
+        municipio: municipio,
+        precioMax: precioMax
+      });
 
       if (Array.isArray(data)) {
         const formattedFlats = data.map((dbFlat) => ({
@@ -139,7 +150,14 @@ export default function TenantFeed() {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
-      {/* Card Stack */}
+      {userId && (
+        <button 
+          onClick={() => setShowFilters(true)}
+          className="absolute top-4 right-4 z-40 bg-white p-3 rounded-full shadow-md text-slate-700 hover:text-[#e8385d] transition-colors"
+        >
+          <Filter className="w-6 h-6" />
+        </button>
+      )}
       <div className="flex-1 relative flex items-center justify-center">
         {loading ? (
           <div className="flex flex-col items-center text-slate-500 space-y-4">
@@ -305,6 +323,93 @@ export default function TenantFeed() {
                 className="mt-5 text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer"
               >
                 Cerrar aviso
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Filters Bottom Sheet Modal ═══ */}
+      {showFilters && (
+        <div
+          className="absolute inset-0 z-50 flex items-end justify-center"
+          style={{
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+          }}
+          onClick={() => setShowFilters(false)}
+        >
+          <div
+            className="w-full bg-white rounded-t-3xl shadow-2xl p-6 pb-10"
+            style={{ animation: "nfSlideUp 0.3s ease-out forwards" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-slate-800">Filtros de Búsqueda</h2>
+              <button onClick={() => setShowFilters(false)} className="text-slate-400 font-bold p-2">✕</button>
+            </div>
+
+            {/* Filtro: Municipio */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-600 mb-2">Municipio</label>
+              <input 
+                type="text" 
+                placeholder="Ej: Madrid, Barcelona, Alicante..."
+                value={municipioFilter}
+                onChange={(e) => setMunicipioFilter(e.target.value)}
+                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#e8385d] focus:outline-none"
+              />
+            </div>
+
+            {/* Filtro: Precio Máximo */}
+            <div className="mb-8">
+              <div className="flex justify-between mb-2">
+                <label className="text-sm font-semibold text-slate-600">Precio Máximo</label>
+                <span className="font-bold text-[#e8385d]">{precioMaxFilter}€</span>
+              </div>
+              <input 
+                type="range" 
+                min="200" 
+                max="3000" 
+                step="50"
+                value={precioMaxFilter}
+                onChange={(e) => setPrecioMaxFilter(Number(e.target.value))}
+                className="w-full accent-[#e8385d]"
+              />
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { 
+                  // 1. Reseteamos los borradores del modal
+                  setMunicipioFilter(""); 
+                  setPrecioMaxFilter(1500); 
+                  // 2. Reseteamos los filtros activos de la base de datos
+                  setAppliedMunicipio("");
+                  setAppliedPrecioMax(null);
+                  // 3. Cerramos modal y recargamos pisos limpios
+                  setShowFilters(false);
+                  fetchFeed("", null); 
+                }}
+                className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                Limpiar
+              </button>
+              <button 
+                onClick={() => { 
+                  // 1. Guardamos el borrador como filtro activo
+                  setAppliedMunicipio(municipioFilter);
+                  setAppliedPrecioMax(precioMaxFilter);
+                  // 2. Cerramos modal y recargamos mandando los nuevos datos
+                  setShowFilters(false);
+                  fetchFeed(municipioFilter, precioMaxFilter); 
+                }}
+                className="flex-[2] py-3 rounded-xl font-bold text-white transition-colors"
+                style={{ background: "linear-gradient(135deg, #e8385d 0%, #ff6b6b 100%)" }}
+              >
+                Aplicar Filtros
               </button>
             </div>
           </div>
