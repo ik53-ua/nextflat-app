@@ -1,5 +1,6 @@
 package com.ua.nextflat.model;
 
+import com.ua.nextflat.model.enums.EstadoVerificacion;
 import com.ua.nextflat.model.enums.RolUsuario;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -35,6 +36,11 @@ public class Usuario {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_verificacion")
+    private EstadoVerificacion estadoVerificacion = EstadoVerificacion.NO_VERIFICADO;
+    
+    // Campo legado mantenido para no romper la BD en Supabase (evitar el error NOT NULL)
     private boolean verificado = false;
     private String documentoVerificacionUrl;
 

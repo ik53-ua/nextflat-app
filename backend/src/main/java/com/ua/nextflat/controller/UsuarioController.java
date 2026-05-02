@@ -1,6 +1,7 @@
 package com.ua.nextflat.controller;
 
 import com.ua.nextflat.model.Usuario;
+import com.ua.nextflat.model.enums.EstadoVerificacion;
 import com.ua.nextflat.repository.UsuarioRepository;
 import com.ua.nextflat.service.UsuarioService;
 
@@ -105,6 +106,13 @@ public class UsuarioController {
         }
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Usuario> obtenerUsuario(@PathVariable Long id) {
+        return usuarioRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/{id}/solicitar-verificacion")
     public ResponseEntity<Usuario> solicitarVerificacion(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
@@ -113,20 +121,7 @@ public class UsuarioController {
             Usuario usuario = usuarioOpt.get();
             String documentoUrl = payload.get("url");
             usuario.setDocumentoVerificacionUrl(documentoUrl);
-            usuarioRepository.save(usuario);
-            return ResponseEntity.ok(usuario);
-        }
-        
-        return ResponseEntity.notFound().build();
-    }
-
-    @PostMapping("/admin/verify/{id}")
-    public ResponseEntity<Usuario> aprobarVerificacion(@PathVariable Long id) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
-        
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            usuario.setVerificado(true);
+            usuario.setEstadoVerificacion(EstadoVerificacion.EN_REVISION);
             usuarioRepository.save(usuario);
             return ResponseEntity.ok(usuario);
         }

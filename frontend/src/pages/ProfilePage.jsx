@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, User, Briefcase, Calendar, FileText, Camera, CheckCircle2, Loader2 } from 'lucide-react';
 import { uploadImage } from '../services/supabase';
+import VerificacionPerfil from '../components/VerificacionPerfil';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -293,6 +294,14 @@ export default function ProfilePage() {
             </button>
           </div>
         </form>
+
+        {/* Verificación de identidad */}
+        {usuarioId && (
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            <VerificacionPerfil usuarioId={usuarioId} />
+          </div>
+        )}
+
       </div>
     </div>
   </div>

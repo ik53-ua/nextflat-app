@@ -8,17 +8,34 @@ import ProfilePage from './pages/ProfilePage';
 import OnboardingPage from './pages/OnboardingPage';
 import MatchesPage from './pages/MatchesPage';
 import OwnerFeed from './pages/OwnerFeed';
-import MisInmuebles from './pages/MisInmuebles'; // Tu importación
+import MisInmuebles from './pages/MisInmuebles';
+import EditarInmueble from './pages/EditarInmueble';
+import SupervisorPage from './pages/SupervisorPage'; // Tu importación
 import './App.css';
 
 // Redirect raíz según rol del usuario logueado
 function RootRedirect() {
   const usuarioGuardado = localStorage.getItem('usuarioLogueado');
   const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+  if (user?.rol === 'SUPERVISOR') {
+    return <Navigate to="/supervisor" replace />;
+  }
   if (user?.rol === 'PROPIETARIO') {
     return <Navigate to="/owner-feed" replace />;
   }
   return <Navigate to="/feed" replace />;
+}
+
+// Protected Route para el Supervisor
+function SupervisorRoute({ children }) {
+  const usuarioGuardado = localStorage.getItem('usuarioLogueado');
+  const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+  
+  if (!user || user.rol !== 'SUPERVISOR') {
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
 }
 
 // Placeholder pages — will be built by the team later
@@ -75,6 +92,12 @@ function App() {
           
           {/* Tu ruta integrada en el nuevo sistema */}
           <Route path="/mis-inmuebles" element={<MisInmuebles />} />
+          <Route path="/mis-inmuebles/editar/:id" element={<EditarInmueble />} />
+          <Route path="/supervisor" element={
+            <SupervisorRoute>
+              <SupervisorPage />
+            </SupervisorRoute>
+          } />
           
           <Route path="/" element={<RootRedirect />} />
         </Routes>

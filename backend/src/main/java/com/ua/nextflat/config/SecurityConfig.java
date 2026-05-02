@@ -20,7 +20,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/usuarios/**", "/api/pisos", "/api/pisos/**", "/api/feed/**",
-                                "/api/inmuebles/**","/api/matches/**", "/api/propietario-feed/**")
+                                "/api/inmuebles/**","/api/matches/**", "/api/propietario-feed/**", "/api/supervisor/**", "/error")
                         .permitAll()
                         .anyRequest().authenticated())
 

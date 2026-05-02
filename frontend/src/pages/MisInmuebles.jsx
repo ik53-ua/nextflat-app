@@ -32,6 +32,29 @@ export default function MisInmuebles() {
       });
   }, [apiUrl, propietarioId]);
 
+  const handleToggleActivo = async (id) => {
+    try {
+      const res = await fetch(`${apiUrl}/api/inmuebles/${id}/estado`, { method: 'PATCH' });
+      if (res.ok) {
+        setInmuebles(inmuebles.map(piso => piso.id === id ? { ...piso, activo: !piso.activo } : piso));
+      }
+    } catch (error) {
+      console.error("Error cambiando estado:", error);
+    }
+  };
+
+  const handleEliminar = async (id) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este inmueble permanentemente?")) return;
+    try {
+      const res = await fetch(`${apiUrl}/api/inmuebles/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setInmuebles(inmuebles.filter(piso => piso.id !== id));
+      }
+    } catch (error) {
+      console.error("Error eliminando inmueble:", error);
+    }
+  };
+
   if (cargando) return <div style={{ padding: '20px' }}>Cargando tus propiedades... ⏳</div>;
 
   // 3. Mensaje por si alguien entra a "Mis Inmuebles" sin haber pasado por el login
@@ -55,11 +78,20 @@ export default function MisInmuebles() {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Mis Inmuebles</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+    <div 
+      className="min-h-screen relative p-6"
+      style={{
+        background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)',
+      }}
+    >
+      <div style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
         {inmuebles.map(piso => (
-          <TarjetaInmueble key={piso.id} piso={piso} />
+          <TarjetaInmueble 
+            key={piso.id} 
+            piso={piso} 
+            onToggleActivo={handleToggleActivo} 
+            onEliminar={handleEliminar} 
+          />
         ))}
       </div>
     </div>

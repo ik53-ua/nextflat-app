@@ -1,6 +1,6 @@
-import React from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Home, MessageCircle, SlidersHorizontal, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Home, MessageCircle, SlidersHorizontal, Users, Building2, BadgeCheck, AlertCircle } from 'lucide-react';
 
 // Profile Avatar
 function ProfileAvatar({ user }) {
@@ -58,6 +58,16 @@ function BottomTab({ to, label, Icon, activeAlso }) {
 // Main Layout
 export default function AppLayout({ children }) {
     const navigate = useNavigate();
+    const location = useLocation();
+    const [toastDenegado, setToastDenegado] = useState(false);
+
+    useEffect(() => {
+        if (sessionStorage.getItem('toastVerificacion') === 'denegado') {
+            setToastDenegado(true);
+            sessionStorage.removeItem('toastVerificacion');
+            setTimeout(() => setToastDenegado(false), 5000);
+        }
+    }, [location]);
 
     // Recuperamos los datos del usuario logueado
     const usuarioGuardado = localStorage.getItem('usuarioLogueado');
@@ -83,9 +93,14 @@ export default function AppLayout({ children }) {
                 <div className="flex items-center gap-3">
                     {user ? (
                         <>
-                            <span className="text-sm font-medium text-slate-700 hidden sm:block">
-                                {user.nombre}
-                            </span>
+                            <div className="flex items-center gap-1 hidden sm:flex">
+                                <span className="text-sm font-medium text-slate-700">
+                                    {user.nombre}
+                                </span>
+                                {user.estadoVerificacion === 'VERIFICADO' && (
+                                    <BadgeCheck className="w-4 h-4 text-blue-500" />
+                                )}
+                            </div>
                             <Link to="/perfil" className="focus:outline-none">
                                 <ProfileAvatar user={user} />
                             </Link>
@@ -111,16 +126,31 @@ export default function AppLayout({ children }) {
 
             {/* Page Content */}
             <main className="flex-1 relative overflow-auto">
+                {/* Toast de verificación denegada */}
+                {toastDenegado && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300 w-[90%] max-w-sm">
+                        <div className="bg-red-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <h4 className="font-bold text-sm">Verificación Denegada</h4>
+                                <p className="text-xs text-red-100 mt-1">
+                                    Tu documento fue rechazado. Por favor, intenta subir uno nuevo desde tu perfil.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {children}
             </main>
 
-            {user && (() => {
+            {user && user.rol !== 'SUPERVISOR' && (() => {
                 const isPropietario = user.rol === 'PROPIETARIO';
                 const tabs = isPropietario
                     ? [
-                        { to: '/filtros',    label: 'Filtros',     Icon: SlidersHorizontal },
-                        { to: '/owner-feed', label: 'Candidatos',  Icon: Users },
-                        { to: '/matches',    label: 'Matches',     Icon: MessageCircle },
+                        { to: '/filtros',       label: 'Filtros',    Icon: SlidersHorizontal },
+                        { to: '/owner-feed',    label: 'Candidatos', Icon: Users },
+                        { to: '/mis-inmuebles', label: 'Mis Pisos',  Icon: Building2 },
+                        { to: '/matches',       label: 'Matches',    Icon: MessageCircle },
                     ]
                     : [
                         { to: '/filtros', label: 'Filtros',   Icon: SlidersHorizontal },

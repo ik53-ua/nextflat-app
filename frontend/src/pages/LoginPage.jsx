@@ -37,8 +37,14 @@ const LoginPage = () => {
       if (response.ok) {
         const userData = await response.json();
         localStorage.setItem('usuarioLogueado', JSON.stringify(userData));
+        if (userData.estadoVerificacion === 'DENEGADO') {
+          sessionStorage.setItem('toastVerificacion', 'denegado');
+        }
+
         // Redirigir según rol
-        if (userData.rol === 'PROPIETARIO') {
+        if (userData.rol === 'SUPERVISOR') {
+          navigate('/supervisor');
+        } else if (userData.rol === 'PROPIETARIO') {
           navigate('/owner-feed');
         } else {
           navigate('/feed');

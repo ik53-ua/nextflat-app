@@ -33,3 +33,55 @@ export const uploadImage = async (bucket, file) => {
     return null;
   }
 };
+
+// Function to upload property photos
+export const uploadPropertyPhoto = async (file) => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const uniqueId = Math.random().toString(36).substring(2, 9);
+    const fileName = `${Date.now()}-${uniqueId}.${fileExt}`;
+    const filePath = `inmueble-photos/${fileName}`;
+
+    const { data, error: uploadError } = await supabase.storage
+      .from('inmuebles')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from('inmuebles')
+      .getPublicUrl(filePath);
+
+    return {
+      url: publicData.publicUrl,
+      path: filePath
+    };
+  } catch (error) {
+    console.error('Error uploading property photo:', error);
+    return null;
+  }
+};
+
+// Function to delete property photo
+export const deletePropertyPhoto = async (filePath) => {
+  try {
+    const { error } = await supabase.storage
+      .from('inmuebles')
+      .remove([filePath]);
+
+    if (error) {
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting property photo:', error);
+    return false;
+  }
+};

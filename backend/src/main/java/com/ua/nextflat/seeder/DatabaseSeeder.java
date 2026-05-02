@@ -56,7 +56,21 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        if (usuarioRepository.count() == 0) {
+        // Asegurarnos de que el Supervisor siempre exista
+        if (!usuarioRepository.existsByEmail("admin@nextflat.com")) {
+            Usuario supervisor = new Usuario();
+            supervisor.setNombre("Admin Supervisor");
+            supervisor.setEmail("admin@nextflat.com");
+            supervisor.setPassword("admin123");
+            supervisor.setRol(RolUsuario.SUPERVISOR);
+            supervisor.setFotoPerfil("https://randomuser.me/api/portraits/lego/1.jpg");
+            supervisor.setBio("Administrador del sistema NextFlat.");
+            supervisor.setEstadoVerificacion(com.ua.nextflat.model.enums.EstadoVerificacion.VERIFICADO);
+            usuarioRepository.save(supervisor);
+            System.out.println("✅ Cuenta de Supervisor (admin@nextflat.com) generada con éxito.");
+        }
+
+        if (usuarioRepository.count() <= 1) {
             System.out.println("🌱 Base de datos vacía. Iniciando Seeder optimizado con saveAll...");
 
             Faker faker = new Faker(new Locale("es", "ES"));
@@ -89,7 +103,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 inquilino.setRol(RolUsuario.INQUILINO);
                 inquilino.setProfesion(faker.company().profession());
                 inquilino.setBio("Hola, soy " + inquilino.getNombre() + ". Busco un piso compartido por la zona.");
-                inquilino.setVerificado(true);
+                inquilino.setEstadoVerificacion(com.ua.nextflat.model.enums.EstadoVerificacion.VERIFICADO);
                 inquilino.setFechaNacimiento(LocalDate.now().minusYears(faker.number().numberBetween(18, 35)));
                 inquilino.setFotoPerfil("https://randomuser.me/api/portraits/" + (i % 2 == 0 ? "men" : "women") + "/" + i + ".jpg");
                 usuariosALista.add(inquilino);
