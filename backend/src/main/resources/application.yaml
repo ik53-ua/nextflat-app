@@ -2,27 +2,37 @@ spring:
   application:
     name: nextflat
 
+  # Apagar la seguridad
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
   # Configuración de la Base de Datos (Supabase / PostgreSQL)
   datasource:
-    url: jdbc:postgresql://aws-1-eu-central-1.pooler.supabase.com:5432/postgres
+    url: jdbc:postgresql://aws-1-eu-central-1.pooler.supabase.com:5432/postgres?prepareThreshold=0
     username: postgres.rxpgzthbvgjbkatalyly
     password: LaContraseñaMasSeguraDelMundo1234567890.
     driver-class-name: org.postgresql.Driver
     # Configuración para evitar cortes de conexión con Supabase
     hikari:
-      max-lifetime: 120000 # Destruye las conexiones cada 2 minutos antes de que Supabase lo haga
-      idle-timeout: 60000 # Limpia las conexiones inactivas al minuto
-      keepalive-time: 30000 # Envía un "latido" cada 30 segundos para mantenerla viva
+      maximum-pool-size: 2
+      max-lifetime: 120000
+      idle-timeout: 60000
+      keepalive-time: 30000
 
   # Configuración de Hibernate / JPA
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: false
+supabase:
+  url: https://rxpgzthbvgjbkatalyly.supabase.co
+  anon-key: sb_publishable_JMQxo_KcAScp_tbBStjw4g_L3Z_OMfU
 
 server:
   port: 8080

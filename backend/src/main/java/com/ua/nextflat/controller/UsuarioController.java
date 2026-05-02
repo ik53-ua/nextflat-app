@@ -2,7 +2,10 @@ package com.ua.nextflat.controller;
 
 import com.ua.nextflat.model.Usuario;
 import com.ua.nextflat.repository.UsuarioRepository;
+import com.ua.nextflat.service.UsuarioService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,9 +20,84 @@ public class UsuarioController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    /**
-     * US 021: Solicitar Verificación
-     */
+    @Autowired
+    private UsuarioService usuarioService;
+
+    @PostMapping("/registro")
+    public ResponseEntity<Usuario> registrarUsuario(@RequestBody Usuario nuevoUsuario) {
+        try {
+            Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
+            return ResponseEntity.ok(usuarioGuardado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> iniciarSesion(@RequestBody Usuario credenciales) {
+        try {
+            Optional<Usuario> usuarioEncontrado = usuarioRepository.findAll().stream()
+                    .filter(u -> u.getEmail().equals(credenciales.getEmail()) &&
+                            u.getPassword().equals(credenciales.getPassword()))
+                    .findFirst();
+
+            if (usuarioEncontrado.isPresent()) {
+                return ResponseEntity.ok(usuarioEncontrado.get()); // Login correcto
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas"); // Fallo
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Usuario> actualizarPerfil(@PathVariable Long id, @RequestBody Usuario datosActualizados) {
+        try {
+            Optional<Usuario> usuarioExistente = usuarioRepository.findById(id);
+
+            if (usuarioExistente.isPresent()) {
+                Usuario usuario = usuarioExistente.get();
+                if (datosActualizados.getNombre() != null) {
+                    usuario.setNombre(datosActualizados.getNombre());
+                }
+                if (datosActualizados.getProfesion() != null) {
+                    usuario.setProfesion(datosActualizados.getProfesion());
+                }
+                if (datosActualizados.getFechaNacimiento() != null) {
+                    usuario.setFechaNacimiento(datosActualizados.getFechaNacimiento());
+                }
+                if (datosActualizados.getBio() != null) {
+                    usuario.setBio(datosActualizados.getBio());
+                }
+                if (datosActualizados.getFotoPerfil() != null) {
+                    usuario.setFotoPerfil(datosActualizados.getFotoPerfil());
+                }
+
+                Usuario usuarioGuardado = usuarioRepository.save(usuario);
+                return ResponseEntity.ok(usuarioGuardado);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<?> actualizarPassword(@PathVariable Long id,
+            @RequestBody java.util.Map<String, String> passwords) {
+        String actual = passwords.get("currentPassword");
+        String nueva = passwords.get("newPassword");
+        boolean exito = usuarioService.actualizarPassword(id, actual, nueva);
+
+        if (exito) {
+            return ResponseEntity.ok().body("Contraseña actualizada correctamente");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("La contraseña actual es incorrecta");
+        }
+    }
+
     @PostMapping("/{id}/solicitar-verificacion")
     public ResponseEntity<Usuario> solicitarVerificacion(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         
@@ -36,9 +114,6 @@ public class UsuarioController {
         return ResponseEntity.notFound().build();
     }
 
-    /**
-     * US 021: Simulación de Aprobación
-     */
     @PostMapping("/admin/verify/{id}")
     public ResponseEntity<Usuario> aprobarVerificacion(@PathVariable Long id) {
         
