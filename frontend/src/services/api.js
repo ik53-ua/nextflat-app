@@ -37,4 +37,9 @@ export const swipeCandidato = async (swipeRequest) => {
   // body: { propietarioId, candidatoId, tipoInteraccion }
   const response = await api.post(`/propietario-feed/swipe`, swipeRequest);
   return response.data;
-};
+};
+
+export const crearInmueble = async (inmuebleData) => {
+  const response = await api.post(`/inmuebles`, inmuebleData);
+  return response.data;
+};

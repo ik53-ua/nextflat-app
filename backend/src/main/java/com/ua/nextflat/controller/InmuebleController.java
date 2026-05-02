@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 @CrossOrigin(origins = "http://localhost:5173")
 public class InmuebleController {
 
-
     @Autowired
     private InmuebleRepository inmuebleRepository;
 
@@ -36,16 +35,16 @@ public class InmuebleController {
 
     @GetMapping("/mis-inmuebles/{propietarioId}")
     public ResponseEntity<List<Inmueble>> getMisInmuebles(@PathVariable Long propietarioId) {
-        
+
         List<Inmueble> misPisos = inmuebleRepository.findByPropietarioId(propietarioId);
-        
+
         for (Inmueble piso : misPisos) {
             List<FotoInmueble> fotos = fotoInmuebleRepository.findByInmuebleId(piso.getId());
             if (!fotos.isEmpty()) {
                 piso.setFotoPrincipal(fotos.get(0).getUrl());
             }
         }
-        
+
         return ResponseEntity.ok(misPisos);
     }
 
@@ -56,7 +55,8 @@ public class InmuebleController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Inmueble> actualizarInmueble(@PathVariable Long id, @RequestBody Inmueble inmuebleActualizado) {
+    public ResponseEntity<Inmueble> actualizarInmueble(@PathVariable Long id,
+            @RequestBody Inmueble inmuebleActualizado) {
         Optional<Inmueble> opt = inmuebleRepository.findById(id);
         if (opt.isPresent()) {
             Inmueble existente = opt.get();
@@ -69,7 +69,7 @@ public class InmuebleController {
             existente.setTieneAscensor(inmuebleActualizado.isTieneAscensor());
             existente.setAdmiteMascotas(inmuebleActualizado.isAdmiteMascotas());
             existente.setEsCompartido(inmuebleActualizado.isEsCompartido());
-            
+
             inmuebleRepository.save(existente);
             return ResponseEntity.ok(existente);
         }
@@ -92,15 +92,19 @@ public class InmuebleController {
     @Transactional
     public ResponseEntity<Void> eliminarInmueble(@PathVariable Long id) {
         if (inmuebleRepository.existsById(id)) {
-            // Delete dependent records using native queries to bypass missing cascade configurations
-            entityManager.createNativeQuery("DELETE FROM matches WHERE inmueble_id = :id").setParameter("id", id).executeUpdate();
-            entityManager.createNativeQuery("DELETE FROM interacciones WHERE inmueble_destino_id = :id").setParameter("id", id).executeUpdate();
-            entityManager.createNativeQuery("DELETE FROM permisos_gestion WHERE inmueble_id = :id").setParameter("id", id).executeUpdate();
-            
+            // Delete dependent records using native queries to bypass missing cascade
+            // configurations
+            entityManager.createNativeQuery("DELETE FROM matches WHERE inmueble_id = :id").setParameter("id", id)
+                    .executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM interacciones WHERE inmueble_destino_id = :id")
+                    .setParameter("id", id).executeUpdate();
+            entityManager.createNativeQuery("DELETE FROM permisos_gestion WHERE inmueble_id = :id")
+                    .setParameter("id", id).executeUpdate();
+
             // Delete photos explicitly
             List<FotoInmueble> fotos = fotoInmuebleRepository.findByInmuebleId(id);
             fotoInmuebleRepository.deleteAll(fotos);
-            
+
             inmuebleRepository.deleteById(id);
             return ResponseEntity.noContent().build();
         }
@@ -135,5 +139,12 @@ public class InmuebleController {
             }
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping
+    public ResponseEntity<Inmueble> crearInmueble(@RequestBody Inmueble nuevoInmueble) {
+        // Guarda el nuevo inmueble en la base de datos
+        Inmueble guardado = inmuebleRepository.save(nuevoInmueble);
+        return ResponseEntity.ok(guardado);
     }
 }

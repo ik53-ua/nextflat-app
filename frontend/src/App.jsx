@@ -10,7 +10,8 @@ import MatchesPage from './pages/MatchesPage';
 import OwnerFeed from './pages/OwnerFeed';
 import MisInmuebles from './pages/MisInmuebles';
 import EditarInmueble from './pages/EditarInmueble';
-import SupervisorPage from './pages/SupervisorPage'; // Tu importación
+import AltaInmueble from './pages/AltaInmueble';
+import SupervisorPage from './pages/SupervisorPage';
 import ChatPage from './pages/ChatPage';
 import './App.css';
 
@@ -94,6 +95,7 @@ function App() {
           
           {/* Tu ruta integrada en el nuevo sistema */}
           <Route path="/mis-inmuebles" element={<MisInmuebles />} />
+          <Route path="/mis-inmuebles/nuevo" element={<AltaInmueble />} />
           <Route path="/mis-inmuebles/editar/:id" element={<EditarInmueble />} />
           <Route path="/supervisor" element={
             <SupervisorRoute>

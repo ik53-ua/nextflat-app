@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TarjetaInmueble from '../components/TarjetaInmueble';
 
 export default function MisInmuebles() {
+  const navigate = useNavigate();
+
   const [inmuebles, setInmuebles] = useState([]);
   const [cargando, setCargando] = useState(true);
   
@@ -67,23 +70,20 @@ export default function MisInmuebles() {
     );
   }
 
-  if (inmuebles.length === 0) {
-    return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <h2>Aún no tienes propiedades 🏠</h2>
-        <p>Empieza a rentabilizar tus espacios publicando tu primer inmueble.</p>
-        <button style={{ padding: '10px 20px', cursor: 'pointer', marginTop: '10px' }}>Crear Inmueble</button>
-      </div>
-    );
-  }
-
   return (
     <div 
-      className="min-h-screen relative p-6"
+      className="min-h-screen relative p-6 pb-24"
       style={{
         background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)',
       }}
     >
+      {inmuebles.length === 0 && (
+        <div style={{ textAlign: 'center', color: 'white', marginBottom: '20px' }}>
+          <h2>Aún no tienes propiedades 🏠</h2>
+          <p>Pulsa el botón de abajo para publicar tu primer inmueble.</p>
+        </div>
+      )}
+
       <div style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
         {inmuebles.map(piso => (
           <TarjetaInmueble 
@@ -94,6 +94,18 @@ export default function MisInmuebles() {
           />
         ))}
       </div>
+
+      <button 
+        onClick={() => navigate('/mis-inmuebles/nuevo')}
+        style={{ 
+          position: 'fixed', bottom: '30px', right: '30px', 
+          padding: '15px 25px', backgroundColor: 'white', color: '#e8385d', 
+          borderRadius: '30px', fontWeight: 'bold', cursor: 'pointer', 
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: 'none', zIndex: 50 
+        }}
+      >
+        + Crear Inmueble
+      </button>
     </div>
   );
 }
