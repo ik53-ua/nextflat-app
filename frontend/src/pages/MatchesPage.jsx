@@ -2,9 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchesForUser } from '../services/api';
 
-// TODO: reemplaza este ID por el del usuario logueado cuando 
-// tengáis AuthContext implementado
-const USUARIO_ID_TEMPORAL = 1;
 
 function formatFecha(fechaISO) {
   if (!fechaISO) return '';
@@ -78,7 +75,11 @@ export default function MatchesPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getMatchesForUser(USUARIO_ID_TEMPORAL)
+    const userGuardado = localStorage.getItem('usuarioLogueado');
+    const user = userGuardado ? JSON.parse(userGuardado) : null;
+    const userId = user ? user.id : 1;
+
+    getMatchesForUser(userId)
       .then(setMatches)
       .catch(() => setError('No se pudieron cargar los matches. Inténtalo de nuevo.'))
       .finally(() => setLoading(false));

@@ -11,6 +11,7 @@ import OwnerFeed from './pages/OwnerFeed';
 import MisInmuebles from './pages/MisInmuebles';
 import EditarInmueble from './pages/EditarInmueble';
 import SupervisorPage from './pages/SupervisorPage'; // Tu importación
+import ChatPage from './pages/ChatPage';
 import './App.css';
 
 // Redirect raíz según rol del usuario logueado
@@ -89,6 +90,7 @@ function App() {
           <Route path="/matches" element={<MatchesPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/chat/:matchId" element={<ChatPage />} />
           
           {/* Tu ruta integrada en el nuevo sistema */}
           <Route path="/mis-inmuebles" element={<MisInmuebles />} />

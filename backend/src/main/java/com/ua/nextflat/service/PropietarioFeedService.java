@@ -19,12 +19,18 @@ public class PropietarioFeedService {
 
     private final InteraccionRepository interaccionRepository;
     private final UsuarioRepository usuarioRepository;
+    private final com.ua.nextflat.repository.MatchRepository matchRepository;
+    private final com.ua.nextflat.repository.ChatRepository chatRepository;
 
     @Autowired
     public PropietarioFeedService(InteraccionRepository interaccionRepository,
-                                  UsuarioRepository usuarioRepository) {
+                                  UsuarioRepository usuarioRepository,
+                                  com.ua.nextflat.repository.MatchRepository matchRepository,
+                                  com.ua.nextflat.repository.ChatRepository chatRepository) {
         this.interaccionRepository = interaccionRepository;
         this.usuarioRepository = usuarioRepository;
+        this.matchRepository = matchRepository;
+        this.chatRepository = chatRepository;
     }
 
     /**
@@ -89,5 +95,32 @@ public class PropietarioFeedService {
         interaccion.setTipo(request.getTipoInteraccion());
 
         interaccionRepository.save(interaccion);
+
+        if (request.getTipoInteraccion() == com.ua.nextflat.model.enums.TipoInteraccion.LIKE) {
+            // Find the inmueble that the candidate liked
+            List<Interaccion> likesAnteriores = interaccionRepository
+                    .findLikesDeCandidatoEnPisosDelPropietario(candidato.getId(), propietario.getId());
+
+            if (!likesAnteriores.isEmpty()) {
+                Interaccion likeCandidato = likesAnteriores.get(0);
+                com.ua.nextflat.model.Inmueble inmuebleVinculado = likeCandidato.getInmuebleDestino();
+
+                if (inmuebleVinculado != null) {
+                    // Create Match
+                    com.ua.nextflat.model.Match nuevoMatch = new com.ua.nextflat.model.Match();
+                    nuevoMatch.setPropietario(propietario);
+                    nuevoMatch.setInquilino(candidato);
+                    nuevoMatch.setInmueble(inmuebleVinculado);
+                    com.ua.nextflat.model.Match savedMatch = matchRepository.save(nuevoMatch);
+
+                    // Create Chat
+                    com.ua.nextflat.model.Chat nuevoChat = new com.ua.nextflat.model.Chat();
+                    nuevoChat.setMatchVinculado(savedMatch);
+                    nuevoChat.setNombreGrupo("Chat: " + inmuebleVinculado.getDireccion());
+                    nuevoChat.setEsGrupal(false);
+                    chatRepository.save(nuevoChat);
+                }
+            }
+        }
     }
 }
