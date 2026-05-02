@@ -5,12 +5,22 @@ export default function MisInmuebles() {
   const [inmuebles, setInmuebles] = useState([]);
   const [cargando, setCargando] = useState(true);
   
-  // Por implementar
-  const propietarioId = 35; 
+  // 1. Recuperamos el usuario que se acaba de loguear del localStorage
+  const usuarioGuardado = localStorage.getItem('usuarioLogueado');
+  const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+  
+  // 2. Usamos su ID real (o null si no hay nadie logueado)
+  const propietarioId = user ? user.id : null; 
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    fetch(`${apiUrl}/inmuebles/mis-inmuebles/${propietarioId}`)
+    // Si no hay propietarioId (no está logueado), cortamos aquí para no dar error
+    if (!propietarioId) {
+      setCargando(false);
+      return;
+    }
+
+    fetch(`${apiUrl}/api/inmuebles/mis-inmuebles/${propietarioId}`)
       .then(res => res.json())
       .then(datos => {
         setInmuebles(datos);
@@ -23,6 +33,16 @@ export default function MisInmuebles() {
   }, [apiUrl, propietarioId]);
 
   if (cargando) return <div style={{ padding: '20px' }}>Cargando tus propiedades... ⏳</div>;
+
+  // 3. Mensaje por si alguien entra a "Mis Inmuebles" sin haber pasado por el login
+  if (!user) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <h2>Acceso Denegado 🛑</h2>
+        <p>Por favor, inicia sesión para ver tus propiedades.</p>
+      </div>
+    );
+  }
 
   if (inmuebles.length === 0) {
     return (

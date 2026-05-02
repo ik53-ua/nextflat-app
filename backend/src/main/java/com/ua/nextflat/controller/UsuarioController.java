@@ -24,24 +24,31 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @PostMapping("/registro")
-    public ResponseEntity<Usuario> registrarUsuario(@RequestBody Usuario nuevoUsuario) {
+    public ResponseEntity<?> registrarUsuario(@RequestBody Usuario nuevoUsuario) {
         try {
+            // 1. Comprobar si el email ya existe para que no explote
+            if (usuarioRepository.existsByEmail(nuevoUsuario.getEmail())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("El email ya está en uso");
+            }
+            
+            // 2. Guardar el usuario nuevo
             Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
             return ResponseEntity.ok(usuarioGuardado);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body("Error en el registro: " + e.getMessage());
         }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> iniciarSesion(@RequestBody Usuario credenciales) {
         try {
-            Optional<Usuario> usuarioEncontrado = usuarioRepository.findAll().stream()
-                    .filter(u -> u.getEmail().equals(credenciales.getEmail()) &&
-                            u.getPassword().equals(credenciales.getPassword()))
-                    .findFirst();
+            // 1. Buscamos rápido por email sin descargar toda la base de datos
+            Optional<Usuario> usuarioEncontrado = usuarioRepository.findByEmail(credenciales.getEmail());
 
-            if (usuarioEncontrado.isPresent()) {
+            // 2. Comprobamos contraseña (funcionará perfecto para los que tú registres)
+            if (usuarioEncontrado.isPresent() && 
+                usuarioEncontrado.get().getPassword().equals(credenciales.getPassword())) {
+                
                 return ResponseEntity.ok(usuarioEncontrado.get()); // Login correcto
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas"); // Fallo
@@ -100,7 +107,6 @@ public class UsuarioController {
 
     @PostMapping("/{id}/solicitar-verificacion")
     public ResponseEntity<Usuario> solicitarVerificacion(@PathVariable Long id, @RequestBody Map<String, String> payload) {
-        
         Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
         
         if (usuarioOpt.isPresent()) {
@@ -116,7 +122,6 @@ public class UsuarioController {
 
     @PostMapping("/admin/verify/{id}")
     public ResponseEntity<Usuario> aprobarVerificacion(@PathVariable Long id) {
-        
         Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
         
         if (usuarioOpt.isPresent()) {
