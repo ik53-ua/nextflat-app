@@ -52,3 +52,13 @@ export const crearInmueble = async (inmuebleData) => {
   const response = await api.post(`/inmuebles`, inmuebleData);
   return response.data;
 };
+
+export const undoLastSwipe = async (userId) => {
+  const response = await api.delete(`/feed/rewind/${userId}`);
+  return response.data;
+};
+
+export const undoLastCandidatoSwipe = async (propietarioId) => {
+  const response = await api.delete(`/feed/propietario-rewind/${propietarioId}`);
+  return response.data;
+};

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { Heart, X, MapPin, Briefcase, User } from 'lucide-react';
+import { Heart, X, MapPin, Briefcase, User, RotateCcw } from 'lucide-react';
 
 /**
  * CandidatoCard — Tarjeta swipeable de persona para el feed del propietario (US-008).
@@ -10,8 +10,9 @@ import { Heart, X, MapPin, Briefcase, User } from 'lucide-react';
  *                                  interesadoEnDireccion, interesadoEnMunicipio }
  *   onLike   — callback cuando el propietario acepta al candidato
  *   onDislike — callback cuando el propietario rechaza al candidato
+ *   onRewind — callback cuando el propietario deshace el último rechazo
  */
-export default function CandidatoCard({ item, onLike, onDislike }) {
+export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
     const [hoverState, setHoverState] = useState('center');
     const cardRef = useRef(null);
     const controls = useAnimation();
@@ -193,6 +194,19 @@ export default function CandidatoCard({ item, onLike, onDislike }) {
                     )}
 
                 </div>
+
+                {/* ═══ FIXED UI ELEMENTS (Botón Deshacer Flotante) ═══ */}
+                {onRewind && (
+                    <div className="absolute bottom-6 right-6 z-30 pointer-events-auto">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onRewind(); }}
+                            className="flex items-center justify-center w-12 h-12 bg-yellow-400 hover:bg-yellow-500 text-white rounded-full shadow-2xl transition-transform active:scale-95 border-2 border-white/20"
+                            title="Deshacer último rechazo"
+                        >
+                            <RotateCcw className="w-6 h-6" />
+                        </button>
+                    </div>
+                )}
             </motion.div>
         </div>
     );

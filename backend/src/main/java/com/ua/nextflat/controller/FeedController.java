@@ -2,6 +2,7 @@ package com.ua.nextflat.controller;
 
 import com.ua.nextflat.dto.FeedInmuebleDTO;
 import com.ua.nextflat.dto.SwipeRequestDTO;
+import com.ua.nextflat.model.Usuario;
 import com.ua.nextflat.service.FeedService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -35,5 +36,25 @@ public class FeedController {
     public ResponseEntity<Void> processSwipe(@RequestBody SwipeRequestDTO request) {
         feedService.processSwipe(request);
         return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/rewind/{usuarioId}")
+    public ResponseEntity<?> rewindSwipe(@PathVariable Long usuarioId) {
+        try {
+            FeedInmuebleDTO pisoRecuperado = feedService.rewindLastSwipe(usuarioId);
+            return ResponseEntity.ok(pisoRecuperado);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/propietario-rewind/{propietarioId}")
+    public ResponseEntity<?> rewindCandidatoSwipe(@PathVariable Long propietarioId) {
+        try {
+            Usuario candidatoRecuperado = feedService.rewindLastCandidatoSwipe(propietarioId);
+            return ResponseEntity.ok(candidatoRecuperado);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

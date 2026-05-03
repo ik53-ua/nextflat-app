@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Users, RefreshCcw, Loader2, ShieldAlert } from "lucide-react";
+import { Users, RefreshCcw, Loader2, ShieldAlert, RotateCcw } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import CandidatoCard from "../components/ui/CandidatoCard";
-import { getCandidatosParaPropietario, swipeCandidato } from "../services/api";
+import { getCandidatosParaPropietario, swipeCandidato, undoLastCandidatoSwipe } from "../services/api";
 
 export default function OwnerFeed() {
   const navigate = useNavigate();
@@ -12,13 +12,11 @@ export default function OwnerFeed() {
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
 
-  // Leer usuario del localStorage
   const usuarioGuardado = localStorage.getItem("usuarioLogueado");
   const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
   const userId = currentUser?.id ?? null;
   const userRol = currentUser?.rol ?? null;
 
-  // Guard de rol: solo PROPIETARIO puede acceder
   useEffect(() => {
     if (!currentUser) {
       navigate("/login");
@@ -51,7 +49,6 @@ export default function OwnerFeed() {
   }, [userId]);
 
   const handleSwipe = async (tipo, candidato) => {
-    // Optimistic: quitar de la pila
     setCandidatos((prev) => prev.filter((c) => c.id !== candidato.id));
 
     try {
@@ -68,7 +65,19 @@ export default function OwnerFeed() {
   const handleLike = (candidato) => handleSwipe("LIKE", candidato);
   const handleDislike = (candidato) => handleSwipe("DISLIKE", candidato);
 
-  // ── Estado: Acceso denegado ────────────────────────────────────────────────
+  const handleRewind = async () => {
+    if (!userId) return;
+    try {
+      const restoredCandidato = await undoLastCandidatoSwipe(userId);
+      setCandidatos((prev) => [...prev, restoredCandidato]);
+    } catch (error) {
+      const mensaje = typeof error.response?.data === 'string' 
+          ? error.response.data 
+          : "No se puede deshacer esta acción. El candidato no está disponible o hubo un error de conexión.";
+      alert(mensaje);
+    }
+  };
+
   if (accessDenied) {
     return (
       <div className="w-full h-full flex items-center justify-center p-6">
@@ -92,7 +101,6 @@ export default function OwnerFeed() {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative bg-slate-50">
-      {/* ── Card Stack ──────────────────────────────────────────────── */}
       <div className="flex-1 relative flex items-center justify-center p-0">
         {loading ? (
           <div className="flex flex-col items-center text-slate-500 space-y-4">
@@ -108,16 +116,21 @@ export default function OwnerFeed() {
             <p className="text-slate-500 text-sm">
               Cuando un inquilino dé Like a uno de tus pisos, aparecerá aquí para que lo evalúes.
             </p>
-            <Button onClick={fetchCandidatos} variant="primary" className="mt-2 w-full">
-              <RefreshCcw className="w-4 h-4 mr-2" />
-              Actualizar
-            </Button>
+            <div className="flex gap-3 mt-4 w-full">
+              <Button onClick={handleRewind} variant="outline" className="flex-1 text-yellow-600 border-yellow-200 hover:bg-yellow-50">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Deshacer
+              </Button>
+              <Button onClick={fetchCandidatos} variant="primary" className="flex-[2]">
+                <RefreshCcw className="w-4 h-4 mr-2" />
+                Actualizar
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="relative w-full h-full">
             <AnimatePresence>
               {candidatos.map((candidato, index) => {
-                // Mostrar solo las últimas 3 cartas de la pila (las más próximas)
                 if (index > candidatos.length - 4) {
                   return (
                     <CandidatoCard
@@ -125,6 +138,7 @@ export default function OwnerFeed() {
                       item={candidato}
                       onLike={handleLike}
                       onDislike={handleDislike}
+                      onRewind={handleRewind} 
                     />
                   );
                 }

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class FeedService {
@@ -77,5 +78,61 @@ public class FeedService {
         interaccion.setTipo(request.getTipoInteraccion());
 
         interaccionRepository.save(interaccion);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public FeedInmuebleDTO rewindLastSwipe(Long usuarioId) {
+        Optional<Interaccion> ultimaInteraccionOpt = interaccionRepository
+                .findFirstByUsuarioOrigenIdOrderByFechaDesc(usuarioId);
+
+        if (ultimaInteraccionOpt.isEmpty()) {
+            throw new IllegalStateException("No hay interacciones para deshacer.");
+        }
+
+        Interaccion ultima = ultimaInteraccionOpt.get();
+
+        if ("LIKE".equals(ultima.getTipo().name())) {
+            throw new IllegalStateException("Solo puedes deshacer los rechazos (DISLIKE).");
+        }
+
+        interaccionRepository.delete(ultima);
+
+        Inmueble inmueble = ultima.getInmuebleDestino();
+        FeedInmuebleDTO dto = new FeedInmuebleDTO();
+        dto.setId(inmueble.getId());
+        dto.setPrecio(inmueble.getPrecio());
+        dto.setMunicipio(inmueble.getMunicipio());
+        dto.setDireccion(inmueble.getDireccion());
+        dto.setNumHabitaciones(inmueble.getNumHabitaciones());
+        dto.setNumBanos(inmueble.getNumBanos());
+
+        List<String> urls = fotoInmuebleRepository
+                .findByInmuebleId(inmueble.getId())
+                .stream()
+                .map(FotoInmueble::getUrl)
+                .collect(Collectors.toList());
+        dto.setFotos(urls);
+
+        return dto;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Usuario rewindLastCandidatoSwipe(Long propietarioId) {
+        Optional<Interaccion> ultimaInteraccionOpt = interaccionRepository
+                .findFirstByUsuarioOrigenIdOrderByFechaDesc(propietarioId);
+
+        if (ultimaInteraccionOpt.isEmpty()) {
+            throw new IllegalStateException("No hay interacciones para deshacer.");
+        }
+
+        Interaccion ultima = ultimaInteraccionOpt.get();
+
+        if ("LIKE".equals(ultima.getTipo().name())) {
+            throw new IllegalStateException("Solo puedes deshacer los rechazos (DISLIKE).");
+        }
+
+        interaccionRepository.delete(ultima);
+
+        return ultima.getUsuarioTarget();
     }
 }

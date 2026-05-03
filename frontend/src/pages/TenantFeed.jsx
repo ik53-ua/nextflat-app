@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Filter, RefreshCcw, Loader2 } from "lucide-react";
+import { Filter, RefreshCcw, Loader2, RotateCcw } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import Button from "../components/ui/Button";
 import HoverPropertyCard from "../components/ui/HoverPropertyCard";
-import { getFeedForUser, processSwipe } from "../services/api";
+import { getFeedForUser, processSwipe, undoLastSwipe } from "../services/api";
 
 // Dummy data for initial dev / fallback (shown when user is not logged in)
 const DUMMY_FLATS = [
@@ -148,6 +148,34 @@ export default function TenantFeed() {
   const handleLike = (item) => handleSwipe("LIKE", item);
   const handleDislike = (item) => handleSwipe("DISLIKE", item);
 
+  const handleRewind = async () => {
+    if (!userId) return;
+
+    try {
+      const dbFlat = await undoLastSwipe(userId);
+
+      const formattedRestoredFlat = {
+        id: dbFlat.id,
+        title: dbFlat.direccion,
+        location: dbFlat.municipio,
+        price: dbFlat.precio,
+        features: [
+          `${dbFlat.numHabitaciones} Hab`,
+          `${dbFlat.numBanos} Baños`,
+        ],
+        images:
+          dbFlat.fotos && dbFlat.fotos.length > 0
+            ? dbFlat.fotos
+            : ["https://via.placeholder.com/800x600?text=Sin+Foto"],
+      };
+
+      // 3. Lo metemos al array para que aparezca en pantalla con su foto y sus etiquetas
+      setFlats((prev) => [...prev, formattedRestoredFlat]);
+    } catch (error) {
+      alert(error.response?.data || "No se puede deshacer esta acción");
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
       {userId && (
@@ -173,10 +201,16 @@ export default function TenantFeed() {
             <p className="text-slate-500">
               Ajusta tus filtros o vuelve más tarde para ver nuevos pisos en tu zona.
             </p>
-            <Button onClick={fetchFeed} variant="primary" className="mt-4 w-full">
-              <RefreshCcw className="w-4 h-4 mr-2" />
-              Volver a cargar
-            </Button>
+            <div className="flex gap-3 mt-4 w-full">
+              <Button onClick={handleRewind} variant="outline" className="flex-1 text-yellow-600 border-yellow-200 hover:bg-yellow-50">
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Deshacer
+              </Button>
+              <Button onClick={() => fetchFeed()} variant="primary" className="flex-[2]">
+                <RefreshCcw className="w-4 h-4 mr-2" />
+                Recargar
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="relative w-full h-full">
@@ -189,6 +223,7 @@ export default function TenantFeed() {
                       item={flat}
                       onLike={handleLike}
                       onDislike={handleDislike}
+                      onRewind={handleRewind}
                     />
                   );
                 }

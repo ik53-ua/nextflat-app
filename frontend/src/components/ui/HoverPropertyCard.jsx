@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { Heart, X, MapPin, Eye } from 'lucide-react';
+import { Heart, X, MapPin, Eye, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export default function HoverPropertyCard({ item, onLike, onDislike }) {
+export default function HoverPropertyCard({ item, onLike, onDislike, onRewind }) {
     const [hoverState, setHoverState] = useState('center');
     const cardRef = useRef(null);
     const controls = useAnimation();
@@ -73,8 +73,6 @@ export default function HoverPropertyCard({ item, onLike, onDislike }) {
                     }}
                 />
 
-                {/* TEXTO: RECHAZAR - Movido más a la izquierda */}
-                {/* CAMBIO AQUÍ: Cambiado w-[40%] por w-[35%] y añadido pr-8 para empujarlo más */}
                 <div className="absolute inset-y-0 left-0 w-[35%] pr-8 flex items-center justify-center pointer-events-none">
                     <div style={{
                         transform: 'rotate(-10deg)',
@@ -108,8 +106,6 @@ export default function HoverPropertyCard({ item, onLike, onDislike }) {
                     }}
                 />
 
-                {/* TEXTO: ACEPTAR - Movido más a la derecha */}
-                {/* CAMBIO AQUÍ: Cambiado w-[40%] por w-[35%] y añadido pl-8 para empujarlo más */}
                 <div className="absolute inset-y-0 right-0 w-[35%] pl-8 flex items-center justify-center pointer-events-none">
                     <div style={{
                         transform: 'rotate(10deg)',
@@ -177,10 +173,20 @@ export default function HoverPropertyCard({ item, onLike, onDislike }) {
             </motion.div>
 
             {/* ═══ FIXED UI ELEMENTS (No se mueven con la imagen) ═══ */}
-            <div className="absolute bottom-10 left-0 right-0 z-30 flex justify-center pointer-events-auto">
+            <div className="absolute bottom-10 left-0 right-0 z-30 flex justify-center gap-4 pointer-events-auto">
+                {onRewind && (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onRewind(); }}
+                        className="flex items-center justify-center w-11 h-11 bg-yellow-400 hover:bg-yellow-500 text-white rounded-full shadow-xl transition-transform active:scale-95 z-50"
+                        title="Deshacer último rechazo"
+                    >
+                        <RotateCcw className="w-5 h-5" />
+                    </button>
+                )}
+                
                 <button 
                     onClick={(e) => { e.stopPropagation(); navigate(`/property/${item.id}`); }}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-white/30 backdrop-blur-xl hover:bg-white/40 text-white rounded-full border border-white/50 font-bold text-sm transition-all active:scale-95 shadow-xl group"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-white/30 backdrop-blur-xl hover:bg-white/40 text-white rounded-full border border-white/50 font-bold text-sm transition-all active:scale-95 shadow-xl group z-50"
                 >
                     <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
                     Ver Detalles
