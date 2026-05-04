@@ -23,7 +23,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages.length]);
 
   // Load chat and initial messages
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function ChatPage() {
           contenido: content
         })
       });
-      
+
       if (res.ok) {
         const newMsg = await res.json();
         setMessages(prev => [...prev, newMsg]);
@@ -104,11 +104,11 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 relative overflow-hidden font-sans">
+    <div className="flex flex-col h-full bg-gray-50 relative overflow-hidden font-sans">
       {/* Premium Glassmorphism Header */}
       <div className="absolute top-0 w-full z-10">
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm px-4 py-4 flex items-center justify-between">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-700"
           >
@@ -147,20 +147,19 @@ export default function ChatPage() {
             // Simple animation for new messages
             const isNew = idx === messages.length - 1;
             return (
-              <div 
-                key={msg.id || idx} 
+              <div
+                key={msg.id || idx}
                 className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isNew ? 'animate-fade-in-up' : ''}`}
               >
-                <div 
-                  className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm relative ${
-                    isMe 
-                      ? 'bg-gradient-to-br from-[#e8385d] to-[#c0284a] text-white rounded-tr-sm' 
-                      : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm'
-                  }`}
+                <div
+                  className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm relative ${isMe
+                    ? 'bg-gradient-to-br from-[#e8385d] to-[#c0284a] text-white rounded-tr-sm'
+                    : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm'
+                    }`}
                 >
                   <p className="text-[15px] leading-relaxed">{msg.contenido}</p>
                   <span className={`text-[10px] mt-1 block text-right opacity-70 ${isMe ? 'text-white' : 'text-gray-400'}`}>
-                    {msg.fecha ? new Date(msg.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                    {msg.fecha ? new Date(msg.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                   </span>
                 </div>
               </div>
@@ -185,17 +184,16 @@ export default function ChatPage() {
           <button
             type="submit"
             disabled={!inputMessage.trim()}
-            className={`p-3.5 rounded-full flex items-center justify-center transition-all ${
-              inputMessage.trim() 
-                ? 'bg-[#e8385d] text-white shadow-md hover:bg-[#c0284a] active:scale-95' 
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
+            className={`p-3.5 rounded-full flex items-center justify-center transition-all ${inputMessage.trim()
+              ? 'bg-[#e8385d] text-white shadow-md hover:bg-[#c0284a] active:scale-95'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
           >
             <Send size={20} className={inputMessage.trim() ? "ml-0.5" : ""} />
           </button>
         </form>
       </div>
-      
+
       {/* Inject custom animation styles */}
       <style>{`
         @keyframes fade-in-up {

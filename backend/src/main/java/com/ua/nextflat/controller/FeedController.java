@@ -57,4 +57,10 @@ public class FeedController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/public")
+    public ResponseEntity<List<FeedInmuebleDTO>> getPublicFeed() {
+        List<FeedInmuebleDTO> feed = feedService.getPublicFeed();
+        return ResponseEntity.ok(feed);
+    }
 }

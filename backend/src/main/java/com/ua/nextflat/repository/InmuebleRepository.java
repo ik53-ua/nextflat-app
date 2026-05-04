@@ -22,4 +22,7 @@ public interface InmuebleRepository extends JpaRepository<Inmueble, Long> {
     List<Inmueble> findFeedForUser(@Param("usuarioId") Long usuarioId,
             @Param("municipio") String municipio,
             @Param("precioMax") Double precioMax);
+
+    @Query(value = "SELECT * FROM inmuebles WHERE activo = true ORDER BY RANDOM() LIMIT 5", nativeQuery = true)
+    List<Inmueble> findRandomPublicFlats();
 }

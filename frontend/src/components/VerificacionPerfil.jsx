@@ -60,7 +60,7 @@ export default function VerificacionPerfil({ usuarioId }) {
       });
 
       if (respuesta.ok) {
-        // 3. Actualizamos también el localStorage para que el resto de la app lo sepa
+        localStorage.removeItem(`toastDenegadoVisto_${usuarioId}`);
         const usuarioGuardado = localStorage.getItem('usuarioLogueado');
         if (usuarioGuardado) {
           const user = JSON.parse(usuarioGuardado);

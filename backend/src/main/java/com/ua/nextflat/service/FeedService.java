@@ -135,4 +135,25 @@ public class FeedService {
 
         return ultima.getUsuarioTarget();
     }
+
+    public List<FeedInmuebleDTO> getPublicFeed() {
+        List<Inmueble> inmuebles = inmuebleRepository.findRandomPublicFlats();
+        return inmuebles.stream().map(inmueble -> {
+            FeedInmuebleDTO dto = new FeedInmuebleDTO();
+            dto.setId(inmueble.getId());
+            dto.setPrecio(inmueble.getPrecio());
+            dto.setMunicipio(inmueble.getMunicipio());
+            dto.setDireccion(inmueble.getDireccion());
+            dto.setNumHabitaciones(inmueble.getNumHabitaciones());
+            dto.setNumBanos(inmueble.getNumBanos());
+            
+            List<String> urls = fotoInmuebleRepository
+                    .findByInmuebleId(inmueble.getId())
+                    .stream()
+                    .map(FotoInmueble::getUrl)
+                    .collect(Collectors.toList());
+            dto.setFotos(urls);
+            return dto;
+        }).collect(Collectors.toList());
+    }
 }

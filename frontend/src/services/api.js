@@ -6,15 +6,15 @@ const api = axios.create({
 
 export const getFeedForUser = async (userId, filtros = {}) => {
   const params = new URLSearchParams();
-  
+
   if (filtros.municipio && filtros.municipio.trim() !== "") {
     params.append('municipio', filtros.municipio.trim());
   }
-  
+
   if (filtros.precioMax) {
     params.append('precioMax', filtros.precioMax);
   }
-  
+
   const response = await api.get(`/feed/${userId}?${params.toString()}`);
   return response.data;
 };
@@ -60,5 +60,10 @@ export const undoLastSwipe = async (userId) => {
 
 export const undoLastCandidatoSwipe = async (propietarioId) => {
   const response = await api.delete(`/feed/propietario-rewind/${propietarioId}`);
+  return response.data;
+};
+
+export const getPublicFeed = async () => {
+  const response = await api.get(`/feed/public`);
   return response.data;
 };

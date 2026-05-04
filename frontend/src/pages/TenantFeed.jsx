@@ -3,90 +3,46 @@ import { Filter, RefreshCcw, Loader2, RotateCcw } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import Button from "../components/ui/Button";
 import HoverPropertyCard from "../components/ui/HoverPropertyCard";
-import { getFeedForUser, processSwipe, undoLastSwipe } from "../services/api";
+import { getFeedForUser, processSwipe, undoLastSwipe, getPublicFeed } from "../services/api";
+import { useLocation, useNavigate } from 'react-router-dom';
 
-// Dummy data for initial dev / fallback (shown when user is not logged in)
-const DUMMY_FLATS = [
-  {
-    id: 1,
-    title: "Loft Moderno Centro",
-    location: "Madrid Centro",
-    price: 950,
-    features: ["1 Hab", "Luminoso", "Mascotas OK"],
-    images: [
-      "https://images.unsplash.com/photo-1502672260266-1c1de2d93688?w=1920&auto=format&fit=crop",
-    ],
-  },
-  {
-    id: 2,
-    title: "Estudio Acogedor",
-    location: "Malasaña",
-    price: 780,
-    features: ["Estudio", "Amueblado", "Ascensor"],
-    images: [
-      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1920&auto=format&fit=crop",
-    ],
-  },
-  {
-    id: 3,
-    title: "Piso Compartido",
-    location: "Chamberí",
-    price: 450,
-    features: ["Habitación Privada", "Gastos Incluidos"],
-    images: [
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1920&auto=format&fit=crop",
-    ],
-  },
-  {
-    id: 4,
-    title: "Ático con Terraza",
-    location: "Retiro",
-    price: 1200,
-    features: ["2 Habs", "Vistas", "Lujo"],
-    images: [
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1920&auto=format&fit=crop",
-    ],
-  },
-];
 
 export default function TenantFeed() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [flats, setFlats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLoginGate, setShowLoginGate] = useState(false);
   const [showIncompleteProfileGate, setShowIncompleteProfileGate] = useState(false);
 
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const [municipioFilter, setMunicipioFilter] = useState("");
-  const [precioMaxFilter, setPrecioMaxFilter] = useState(1500); 
-  
+  const [precioMaxFilter, setPrecioMaxFilter] = useState(1500);
+
   const [appliedMunicipio, setAppliedMunicipio] = useState("");
   const [appliedPrecioMax, setAppliedPrecioMax] = useState(null);
 
   const usuarioGuardado = localStorage.getItem("usuarioLogueado");
   const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
   const userId = currentUser ? currentUser.id : null;
-  
+
   // Un perfil se considera completo si tiene foto, profesión y biografía
-  const isProfileComplete = currentUser && 
-    currentUser.fotoPerfil && 
-    currentUser.profesion && 
+  const isProfileComplete = currentUser &&
+    currentUser.fotoPerfil &&
+    currentUser.profesion &&
     currentUser.bio;
 
   const fetchFeed = async (municipio = appliedMunicipio, precioMax = appliedPrecioMax) => {
-    if (!userId) {
-      setFlats(DUMMY_FLATS);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
-      // Pasamos los filtros actuales
-      const data = await getFeedForUser(userId, { 
-        municipio: municipio,
-        precioMax: precioMax
-      });
+      let data;
+      // Si no hay ID, llamamos al endpoint público; si lo hay, al feed personalizado
+      if (!userId) {
+        data = await getPublicFeed();
+      } else {
+        data = await getFeedForUser(userId, { municipio, precioMax });
+      }
 
       if (Array.isArray(data)) {
         const formattedFlats = data.map((dbFlat) => ({
@@ -119,13 +75,25 @@ export default function TenantFeed() {
     fetchFeed();
   }, [userId]);
 
+  useEffect(() => {
+    if (location.pathname === '/filtros') {
+      setShowFilters(true);
+    } else {
+      setShowFilters(false);
+    }
+  }, [location]);
+
+  const handleCloseModal = () => {
+    navigate('/feed');
+  };
+
   const handleSwipe = async (type, item) => {
     // If not logged in → intercept and show login gate modal
     if (!userId) {
       setShowLoginGate(true);
       return;
     }
-    
+
     // Si falta información del perfil, bloqueamos la acción y mostramos el aviso
     if (!isProfileComplete) {
       setShowIncompleteProfileGate(true);
@@ -176,16 +144,10 @@ export default function TenantFeed() {
     }
   };
 
+
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
-      {userId && (
-        <button 
-          onClick={() => setShowFilters(true)}
-          className="absolute top-4 right-4 z-40 bg-white p-3 rounded-full shadow-md text-slate-700 hover:text-[#e8385d] transition-colors"
-        >
-          <Filter className="w-6 h-6" />
-        </button>
-      )}
       <div className="flex-1 relative flex items-center justify-center">
         {loading ? (
           <div className="flex flex-col items-center text-slate-500 space-y-4">
@@ -202,7 +164,7 @@ export default function TenantFeed() {
               Ajusta tus filtros o vuelve más tarde para ver nuevos pisos en tu zona.
             </p>
             <div className="flex gap-3 mt-4 w-full">
-              <Button onClick={handleRewind} variant="outline" className="flex-1 text-yellow-600 border-yellow-200 hover:bg-yellow-50">
+              <Button onClick={handleRewind} variant="outline" className="flex-1 text-[#e8385d] border-[#e8385d]/30 hover:bg-[#e8385d]/10">
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Deshacer
               </Button>
@@ -365,15 +327,12 @@ export default function TenantFeed() {
       )}
 
       {/* ═══ Filters Bottom Sheet Modal ═══ */}
+      {/* ═══ Filters Bottom Sheet Modal ═══ */}
       {showFilters && (
         <div
           className="absolute inset-0 z-50 flex items-end justify-center"
-          style={{
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-          }}
-          onClick={() => setShowFilters(false)}
+          style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+          onClick={handleCloseModal} /* <--- Cierra al hacer clic fuera */
         >
           <div
             className="w-full bg-white rounded-t-3xl shadow-2xl p-6 pb-10"
@@ -382,14 +341,14 @@ export default function TenantFeed() {
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-800">Filtros de Búsqueda</h2>
-              <button onClick={() => setShowFilters(false)} className="text-slate-400 font-bold p-2">✕</button>
+              <button onClick={handleCloseModal} className="text-slate-400 font-bold p-2">✕</button>
             </div>
 
             {/* Filtro: Municipio */}
             <div className="mb-6">
               <label className="block text-sm font-semibold text-slate-600 mb-2">Municipio</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Ej: Madrid, Barcelona, Alicante..."
                 value={municipioFilter}
                 onChange={(e) => setMunicipioFilter(e.target.value)}
@@ -403,10 +362,10 @@ export default function TenantFeed() {
                 <label className="text-sm font-semibold text-slate-600">Precio Máximo</label>
                 <span className="font-bold text-[#e8385d]">{precioMaxFilter}€</span>
               </div>
-              <input 
-                type="range" 
-                min="200" 
-                max="3000" 
+              <input
+                type="range"
+                min="200"
+                max="3000"
                 step="50"
                 value={precioMaxFilter}
                 onChange={(e) => setPrecioMaxFilter(Number(e.target.value))}
@@ -416,30 +375,25 @@ export default function TenantFeed() {
 
             {/* Botones de acción */}
             <div className="flex gap-3">
-              <button 
-                onClick={() => { 
-                  // 1. Reseteamos los borradores del modal
-                  setMunicipioFilter(""); 
-                  setPrecioMaxFilter(1500); 
-                  // 2. Reseteamos los filtros activos de la base de datos
+              <button
+                onClick={() => {
+                  setMunicipioFilter("");
+                  setPrecioMaxFilter(1500);
                   setAppliedMunicipio("");
                   setAppliedPrecioMax(null);
-                  // 3. Cerramos modal y recargamos pisos limpios
-                  setShowFilters(false);
-                  fetchFeed("", null); 
+                  navigate('/feed'); /* <--- Volvemos al feed */
+                  fetchFeed("", null);
                 }}
                 className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
               >
                 Limpiar
               </button>
-              <button 
-                onClick={() => { 
-                  // 1. Guardamos el borrador como filtro activo
+              <button
+                onClick={() => {
                   setAppliedMunicipio(municipioFilter);
                   setAppliedPrecioMax(precioMaxFilter);
-                  // 2. Cerramos modal y recargamos mandando los nuevos datos
-                  setShowFilters(false);
-                  fetchFeed(municipioFilter, precioMaxFilter); 
+                  navigate('/feed'); /* <--- Volvemos al feed */
+                  fetchFeed(municipioFilter, precioMaxFilter);
                 }}
                 className="flex-[2] py-3 rounded-xl font-bold text-white transition-colors"
                 style={{ background: "linear-gradient(135deg, #e8385d 0%, #ff6b6b 100%)" }}

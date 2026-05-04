@@ -38,7 +38,13 @@ const LoginPage = () => {
         const userData = await response.json();
         localStorage.setItem('usuarioLogueado', JSON.stringify(userData));
         if (userData.estadoVerificacion === 'DENEGADO') {
-          sessionStorage.setItem('toastVerificacion', 'denegado');
+          // Comprobamos si ya hemos mostrado este mensaje a este usuario
+          const yaVisto = localStorage.getItem(`toastDenegadoVisto_${userData.id}`);
+          if (!yaVisto) {
+            sessionStorage.setItem('toastVerificacion', 'denegado');
+            // Marcamos que ya lo ha visto para que no vuelva a salir
+            localStorage.setItem(`toastDenegadoVisto_${userData.id}`, 'true');
+          }
         }
 
         // Redirigir según rol

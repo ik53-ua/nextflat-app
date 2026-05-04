@@ -7,13 +7,13 @@ export default function MisInmuebles() {
 
   const [inmuebles, setInmuebles] = useState([]);
   const [cargando, setCargando] = useState(true);
-  
+
   // 1. Recuperamos el usuario que se acaba de loguear del localStorage
   const usuarioGuardado = localStorage.getItem('usuarioLogueado');
   const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
-  
+
   // 2. Usamos su ID real (o null si no hay nadie logueado)
-  const propietarioId = user ? user.id : null; 
+  const propietarioId = user ? user.id : null;
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function MisInmuebles() {
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen relative p-6 pb-24"
       style={{
         background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)',
@@ -86,22 +86,30 @@ export default function MisInmuebles() {
 
       <div style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
         {inmuebles.map(piso => (
-          <TarjetaInmueble 
-            key={piso.id} 
-            piso={piso} 
-            onToggleActivo={handleToggleActivo} 
-            onEliminar={handleEliminar} 
+          <TarjetaInmueble
+            key={piso.id}
+            piso={piso}
+            onToggleActivo={handleToggleActivo}
+            onEliminar={handleEliminar}
           />
         ))}
       </div>
 
-      <button 
+      <button
         onClick={() => navigate('/mis-inmuebles/nuevo')}
-        style={{ 
-          position: 'fixed', bottom: '30px', right: '30px', 
-          padding: '15px 25px', backgroundColor: 'white', color: '#e8385d', 
-          borderRadius: '30px', fontWeight: 'bold', cursor: 'pointer', 
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)', border: 'none', zIndex: 50 
+        style={{
+          position: 'fixed',
+          bottom: '100px', /* <--- CAMBIADO DE 30px A 100px */
+          right: '20px',   /* <--- Un pelín más pegado al borde */
+          padding: '15px 25px',
+          backgroundColor: 'white',
+          color: '#e8385d',
+          borderRadius: '30px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          border: 'none',
+          zIndex: 50
         }}
       >
         + Crear Inmueble

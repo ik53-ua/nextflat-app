@@ -71,9 +71,9 @@ export default function OwnerFeed() {
       const restoredCandidato = await undoLastCandidatoSwipe(userId);
       setCandidatos((prev) => [...prev, restoredCandidato]);
     } catch (error) {
-      const mensaje = typeof error.response?.data === 'string' 
-          ? error.response.data 
-          : "No se puede deshacer esta acción. El candidato no está disponible o hubo un error de conexión.";
+      const mensaje = typeof error.response?.data === 'string'
+        ? error.response.data
+        : "No se puede deshacer esta acción. El candidato no está disponible o hubo un error de conexión.";
       alert(mensaje);
     }
   };
@@ -117,7 +117,7 @@ export default function OwnerFeed() {
               Cuando un inquilino dé Like a uno de tus pisos, aparecerá aquí para que lo evalúes.
             </p>
             <div className="flex gap-3 mt-4 w-full">
-              <Button onClick={handleRewind} variant="outline" className="flex-1 text-yellow-600 border-yellow-200 hover:bg-yellow-50">
+              <Button onClick={handleRewind} variant="outline" className="flex-1 text-[#e8385d] border-[#e8385d]/30 hover:bg-[#e8385d]/10">
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Deshacer
               </Button>
@@ -138,7 +138,7 @@ export default function OwnerFeed() {
                       item={candidato}
                       onLike={handleLike}
                       onDislike={handleDislike}
-                      onRewind={handleRewind} 
+                      onRewind={handleRewind}
                     />
                   );
                 }

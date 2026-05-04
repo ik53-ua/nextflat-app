@@ -18,13 +18,18 @@ function AvatarFallback({ nombre }) {
   );
 }
 
-function MatchCard({ match, onClick }) {
+// Añadimos "index" a las props
+function MatchCard({ match, onClick, index }) {
   const [imgError, setImgError] = useState(false);
+
+  // Lógica para alternar colores: Pares (rosa suave), Impares (blanco)
+  const bgColor = index % 2 === 0 ? 'bg-[#fff1f3]' : 'bg-white';
 
   return (
     <button
       onClick={() => onClick(match.matchId)}
-      className="w-full flex items-center gap-4 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left"
+      // Cambiamos el hover y le inyectamos el bgColor
+      className={`w-full flex items-center gap-4 px-4 py-3 hover:opacity-80 active:opacity-60 transition-colors text-left ${bgColor}`}
     >
       {/* Avatar */}
       <div className="flex-shrink-0">
@@ -32,14 +37,13 @@ function MatchCard({ match, onClick }) {
           <img
             src={match.imagenContacto}
             alt={match.nombreContacto}
-            className="w-14 h-14 rounded-full object-cover"
+            className="w-14 h-14 rounded-full object-cover shadow-sm"
             onError={() => setImgError(true)}
           />
         ) : (
           <AvatarFallback nombre={match.nombreContacto} />
         )}
       </div>
-
       {/* Texto */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-slate-800 truncate">{match.nombreContacto}</p>
@@ -47,9 +51,8 @@ function MatchCard({ match, onClick }) {
           <p className="text-sm text-slate-500 truncate">{match.subtitulo}</p>
         )}
       </div>
-
       {/* Fecha */}
-      <span className="text-xs text-slate-400 flex-shrink-0">
+      <span className="text-xs text-slate-400 flex-shrink-0 font-medium">
         {formatFecha(match.fechaMatch)}
       </span>
     </button>
@@ -110,14 +113,15 @@ export default function MatchesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-4 py-4 border-b border-slate-100">
-        <h1 className="text-xl font-bold text-slate-800">Matches</h1>
-        <p className="text-sm text-slate-500">{matches.length} conexiones activas</p>
-      </div>
-      <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-        {matches.map((match) => (
-          <MatchCard key={match.matchId} match={match} onClick={handleMatchClick} />
+    <div className="flex flex-col h-full bg-white">
+      <div className="flex-1 overflow-y-auto">
+        {matches.map((match, index) => (
+          <MatchCard
+            key={match.matchId}
+            match={match}
+            onClick={handleMatchClick}
+            index={index}
+          />
         ))}
       </div>
     </div>

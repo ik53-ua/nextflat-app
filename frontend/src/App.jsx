@@ -32,11 +32,11 @@ function RootRedirect() {
 function SupervisorRoute({ children }) {
   const usuarioGuardado = localStorage.getItem('usuarioLogueado');
   const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
-  
+
   if (!user || user.rol !== 'SUPERVISOR') {
     return <Navigate to="/" replace />;
   }
-  
+
   return children;
 }
 
@@ -65,17 +65,6 @@ function PerfilPlaceholder() {
   );
 }
 
-function FiltrosPlaceholder() {
-  return (
-    <div className="flex items-center justify-center h-full text-slate-400">
-      <div className="text-center space-y-2">
-        <p className="text-5xl">🔍</p>
-        <p className="text-lg font-semibold">Filtros</p>
-        <p className="text-sm">Próximamente</p>
-      </div>
-    </div>
-  );
-}
 
 function App() {
   return (
@@ -87,12 +76,12 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
-          <Route path="/filtros" element={<FiltrosPlaceholder />} />
+          <Route path="/filtros" element={<TenantFeed />} />
           <Route path="/matches" element={<MatchesPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/chat/:matchId" element={<ChatPage />} />
-          
+
           {/* Tu ruta integrada en el nuevo sistema */}
           <Route path="/mis-inmuebles" element={<MisInmuebles />} />
           <Route path="/mis-inmuebles/nuevo" element={<AltaInmueble />} />
@@ -102,7 +91,7 @@ function App() {
               <SupervisorPage />
             </SupervisorRoute>
           } />
-          
+
           <Route path="/" element={<RootRedirect />} />
         </Routes>
       </AppLayout>

@@ -149,11 +149,11 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
                 </div>
 
                 {/* 2/3 Derecho: Información */}
-                <div 
+                <div
                     className="w-2/3 h-full flex flex-col p-5 sm:p-8 relative"
                     style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)' }}
                 >
-                    
+
                     {/* Badge contextual (Piso de interés) */}
                     {ubicacionInteres && (
                         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold text-[#e8385d] mb-4 sm:mb-6 shadow-sm w-fit bg-white">
@@ -195,12 +195,11 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
 
                 </div>
 
-                {/* ═══ FIXED UI ELEMENTS (Botón Deshacer Flotante) ═══ */}
                 {onRewind && (
                     <div className="absolute bottom-6 right-6 z-30 pointer-events-auto">
-                        <button 
+                        <button
                             onClick={(e) => { e.stopPropagation(); onRewind(); }}
-                            className="flex items-center justify-center w-12 h-12 bg-yellow-400 hover:bg-yellow-500 text-white rounded-full shadow-2xl transition-transform active:scale-95 border-2 border-white/20"
+                            className="flex items-center justify-center w-12 h-12 bg-white hover:bg-slate-100 text-[#e8385d] rounded-full shadow-2xl transition-transform active:scale-95"
                             title="Deshacer último rechazo"
                         >
                             <RotateCcw className="w-6 h-6" />

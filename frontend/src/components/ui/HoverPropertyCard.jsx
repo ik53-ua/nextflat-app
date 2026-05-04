@@ -175,16 +175,16 @@ export default function HoverPropertyCard({ item, onLike, onDislike, onRewind })
             {/* ═══ FIXED UI ELEMENTS (No se mueven con la imagen) ═══ */}
             <div className="absolute bottom-10 left-0 right-0 z-30 flex justify-center gap-4 pointer-events-auto">
                 {onRewind && (
-                    <button 
+                    <button
                         onClick={(e) => { e.stopPropagation(); onRewind(); }}
-                        className="flex items-center justify-center w-11 h-11 bg-yellow-400 hover:bg-yellow-500 text-white rounded-full shadow-xl transition-transform active:scale-95 z-50"
+                        className="flex items-center justify-center w-11 h-11 bg-white hover:bg-slate-100 text-[#e8385d] rounded-full shadow-xl transition-transform active:scale-95 z-50"
                         title="Deshacer último rechazo"
                     >
                         <RotateCcw className="w-5 h-5" />
                     </button>
                 )}
-                
-                <button 
+
+                <button
                     onClick={(e) => { e.stopPropagation(); navigate(`/property/${item.id}`); }}
                     className="flex items-center gap-2 px-6 py-2.5 bg-white/30 backdrop-blur-xl hover:bg-white/40 text-white rounded-full border border-white/50 font-bold text-sm transition-all active:scale-95 shadow-xl group z-50"
                 >
