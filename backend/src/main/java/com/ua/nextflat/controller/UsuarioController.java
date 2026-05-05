@@ -128,4 +128,53 @@ public class UsuarioController {
         
         return ResponseEntity.notFound().build();
     }
+
+    // Añadir en la parte superior junto a las inyecciones existentes:
+    @Autowired
+    private com.ua.nextflat.service.GrupoBusquedaService grupoBusquedaService;
+
+    // Añadir al final de la clase:
+    @PostMapping("/{id}/grupo/crear")
+    public ResponseEntity<?> crearGrupo(@PathVariable Long id) {
+        try {
+            Usuario usuarioActualizado = grupoBusquedaService.crearGrupoParaUsuario(id);
+            return ResponseEntity.ok(usuarioActualizado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/grupo/abandonar")
+    public ResponseEntity<?> abandonarGrupo(@PathVariable Long id) {
+        try {
+            Usuario usuarioActualizado = grupoBusquedaService.abandonarGrupo(id);
+            return ResponseEntity.ok(usuarioActualizado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/grupo/unirse")
+    public ResponseEntity<?> unirseAGrupo(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            String codigo = payload.get("codigo");
+            if (codigo == null || codigo.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("El código no puede estar vacío");
+            }
+            Usuario usuarioActualizado = grupoBusquedaService.unirseAGrupo(id, codigo.trim());
+            return ResponseEntity.ok(usuarioActualizado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/grupo/miembros")
+    public ResponseEntity<?> obtenerMiembrosGrupo(@PathVariable Long id) {
+        try {
+            java.util.List<String> miembros = grupoBusquedaService.obtenerNombresMiembros(id);
+            return ResponseEntity.ok(miembros);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

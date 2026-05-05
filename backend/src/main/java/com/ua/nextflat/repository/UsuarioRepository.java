@@ -13,4 +13,5 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByEmail(String email);
     
     java.util.List<Usuario> findByEstadoVerificacion(com.ua.nextflat.model.enums.EstadoVerificacion estado);
+    java.util.List<Usuario> findByGrupoId(Long grupoId);
 }

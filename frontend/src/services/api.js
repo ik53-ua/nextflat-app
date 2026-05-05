@@ -67,3 +67,23 @@ export const getPublicFeed = async () => {
   const response = await api.get(`/feed/public`);
   return response.data;
 };
+
+export const crearGrupoBusqueda = async (usuarioId) => {
+  const response = await api.post(`/usuarios/${usuarioId}/grupo/crear`);
+  return response.data;
+};
+
+export const abandonarGrupoBusqueda = async (usuarioId) => {
+  const response = await api.post(`/usuarios/${usuarioId}/grupo/abandonar`);
+  return response.data;
+};
+
+export const unirseAGrupoBusqueda = async (usuarioId, codigo) => {
+  const response = await api.post(`/usuarios/${usuarioId}/grupo/unirse`, { codigo });
+  return response.data;
+};
+
+export const getMiembrosGrupo = async (usuarioId) => {
+  const response = await api.get(`/usuarios/${usuarioId}/grupo/miembros`);
+  return response.data;
+};

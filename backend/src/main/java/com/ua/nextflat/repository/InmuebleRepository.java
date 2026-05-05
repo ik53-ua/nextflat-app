@@ -14,12 +14,11 @@ public interface InmuebleRepository extends JpaRepository<Inmueble, Long> {
     List<Inmueble> findByPropietarioId(Long propietrarioId);
 
     @Query("SELECT i FROM Inmueble i WHERE i.activo = true " +
-            "AND i.propietario.id != :usuarioId " +
-            "AND NOT EXISTS (SELECT 1 FROM Interaccion int WHERE int.inmuebleDestino.id = i.id AND int.usuarioOrigen.id = :usuarioId) "
-            +
+            "AND i.propietario.id NOT IN :usuariosIds " +
+            "AND NOT EXISTS (SELECT 1 FROM Interaccion int WHERE int.inmuebleDestino.id = i.id AND int.usuarioOrigen.id IN :usuariosIds) " +
             "AND (:municipio IS NULL OR LOWER(i.municipio) = :municipio) " +
             "AND (:precioMax IS NULL OR i.precio <= :precioMax)")
-    List<Inmueble> findFeedForUser(@Param("usuarioId") Long usuarioId,
+    List<Inmueble> findFeedForUser(@Param("usuariosIds") List<Long> usuariosIds,
             @Param("municipio") String municipio,
             @Param("precioMax") Double precioMax);
 

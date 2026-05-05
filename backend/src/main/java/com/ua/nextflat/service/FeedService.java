@@ -38,8 +38,24 @@ public class FeedService {
 
     public List<FeedInmuebleDTO> getFeedForUser(Long usuarioId, String municipio, Double precioMax) {
         String municipioDB = (municipio != null && !municipio.trim().isEmpty()) ? municipio.trim().toLowerCase() : null;
+        
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                
+        List<Long> usuariosIds = new java.util.ArrayList<>();
+        usuariosIds.add(usuarioId);
+        
+        // Si tiene grupo, añadimos también a sus compañeros
+        if (usuario.getGrupo() != null) {
+            List<Usuario> miembros = usuarioRepository.findByGrupoId(usuario.getGrupo().getId());
+            for (Usuario m : miembros) {
+                if (!usuariosIds.contains(m.getId())) {
+                    usuariosIds.add(m.getId());
+                }
+            }
+        }
 
-        List<Inmueble> inmuebles = inmuebleRepository.findFeedForUser(usuarioId, municipioDB, precioMax);
+        List<Inmueble> inmuebles = inmuebleRepository.findFeedForUser(usuariosIds, municipioDB, precioMax);
 
         return inmuebles.stream().map(inmueble -> {
             FeedInmuebleDTO dto = new FeedInmuebleDTO();
@@ -49,14 +65,12 @@ public class FeedService {
             dto.setDireccion(inmueble.getDireccion());
             dto.setNumHabitaciones(inmueble.getNumHabitaciones());
             dto.setNumBanos(inmueble.getNumBanos());
-
             List<String> urls = fotoInmuebleRepository
                     .findByInmuebleId(inmueble.getId())
                     .stream()
                     .map(FotoInmueble::getUrl)
                     .collect(Collectors.toList());
             dto.setFotos(urls);
-
             return dto;
         }).collect(Collectors.toList());
     }
