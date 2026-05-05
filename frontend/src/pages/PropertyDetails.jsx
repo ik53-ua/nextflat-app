@@ -3,11 +3,47 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ChevronLeft, MapPin, Bed, Droplets, 
-    ArrowUpCircle, Dog, Users, Heart, X,
-    CheckCircle2, Loader2, Info, Maximize2
+    ArrowUpCircle, Dog, Users, Heart, X, 
+    CheckCircle2, Loader2, Info, Maximize2, Maximize, Minimize 
 } from 'lucide-react';
+
+// Importaciones de Leaflet
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: markerIcon2x,
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow,
+});
+
 import { getPropertyDetails, processSwipe } from '../services/api';
 import Button from '../components/ui/Button';
+
+// Componente para actualizar el tamaño y centrado del mapa
+function MapUpdater({ lat, lng, isExpanded }) {
+    const map = useMap();
+    
+    useEffect(() => {
+        // Un timeout ligeramente mayor asegura que la animación CSS acabe antes de centrar
+        const timeoutId = setTimeout(() => {
+            map.invalidateSize(); 
+            if (!isExpanded) {
+                map.setView([lat, lng], 15);
+            }
+        }, 350);
+
+        return () => clearTimeout(timeoutId);
+    }, [isExpanded, lat, lng, map]);
+
+    return null;
+}
 
 export default function PropertyDetails() {
     const { id } = useParams();
@@ -16,6 +52,8 @@ export default function PropertyDetails() {
     const [loading, setLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(0);
     const [showFullGallery, setShowFullGallery] = useState(false);
+    
+    const [isMapExpanded, setIsMapExpanded] = useState(false);
 
     const usuarioGuardado = localStorage.getItem("usuarioLogueado");
     const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
@@ -40,7 +78,6 @@ export default function PropertyDetails() {
             navigate('/login');
             return;
         }
-
         try {
             await processSwipe({
                 usuarioOrigenId: userId,
@@ -92,7 +129,7 @@ export default function PropertyDetails() {
             {/* Header / Gallery */}
             <div 
                 className="relative h-[45vh] w-full flex-shrink-0 bg-slate-900 overflow-hidden cursor-zoom-in"
-                onClick={() => setShowFullGallery(true)}
+                onClick={() => !isMapExpanded && setShowFullGallery(true)}
             >
                 <AnimatePresence mode="wait">
                     <motion.img
@@ -106,42 +143,45 @@ export default function PropertyDetails() {
                     />
                 </AnimatePresence>
                 
-                {/* Overlay and Back Button */}
-                <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-20" />
-                <button 
-                    onClick={(e) => { e.stopPropagation(); navigate(-1); }}
-                    className="absolute top-4 left-4 z-40 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-colors shadow-lg"
-                >
-                    <ChevronLeft className="w-6 h-6" />
-                </button>
+                {/* Desmontamos todos los botones superpuestos si el mapa está expandido */}
+                {!isMapExpanded && (
+                    <>
+                        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-20" />
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); navigate(-1); }}
+                            className="absolute top-4 left-4 z-40 p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-colors shadow-lg"
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </button>
+                        <div className="absolute top-4 right-4 z-40 flex items-center gap-2 p-2 bg-black/20 backdrop-blur-md rounded-full text-white/80 pointer-events-none">
+                            <Maximize2 className="w-4 h-4" />
+                            <span className="text-xs font-bold mr-1">Ver galería</span>
+                        </div>
 
-                <div className="absolute top-4 right-4 z-40 flex items-center gap-2 p-2 bg-black/20 backdrop-blur-md rounded-full text-white/80 pointer-events-none">
-                    <Maximize2 className="w-4 h-4" />
-                    <span className="text-xs font-bold mr-1">Ver galería</span>
-                </div>
-
-                {/* Image Indicators */}
-                {property.fotos && property.fotos.length > 1 && (
-                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-1.5 z-40 px-2 py-1 bg-black/30 backdrop-blur-sm rounded-full">
-                        {property.fotos.map((_, i) => (
-                            <div 
-                                key={i} 
-                                className={`h-1.5 rounded-full transition-all duration-300 ${i === activeImage ? 'w-8 bg-white' : 'w-1.5 bg-white/40'}`}
-                            />
-                        ))}
-                    </div>
+                        {property.fotos && property.fotos.length > 1 && (
+                            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-1.5 z-40 px-2 py-1 bg-black/30 backdrop-blur-sm rounded-full">
+                                {property.fotos.map((_, i) => (
+                                    <div 
+                                        key={i} 
+                                        className={`h-1.5 rounded-full transition-all duration-300 ${i === activeImage ? 'w-8 bg-white' : 'w-1.5 bg-white/40'}`}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
-            {/* Content Body */}
-            <div className="flex-1 -mt-8 relative z-30 bg-white rounded-t-[40px] px-6 pt-10 pb-40">
-                {/* Price Label */}
-                <div className="absolute -top-12 right-6 bg-indigo-600 text-white px-6 py-3 rounded-2xl shadow-xl border-4 border-white">
-                    <span className="text-3xl font-black">{property.precio}€</span>
-                    <span className="text-xs font-bold uppercase tracking-wider ml-1">/ mes</span>
-                </div>
+            {/* Content Body: Aumentamos z-index si el mapa está expandido para evitar colisiones */}
+            <div className={`flex-1 -mt-8 relative bg-white rounded-t-[40px] px-6 pt-10 pb-40 ${isMapExpanded ? 'z-[100]' : 'z-30'}`}>
+                
+                {!isMapExpanded && (
+                    <div className="absolute -top-12 right-6 bg-indigo-600 text-white px-6 py-3 rounded-2xl shadow-xl border-4 border-white">
+                        <span className="text-3xl font-black">{property.precio}€</span>
+                        <span className="text-xs font-bold uppercase tracking-wider ml-1">/ mes</span>
+                    </div>
+                )}
 
-                {/* Basic Info */}
                 <header className="mb-8">
                     <h1 className="text-3xl font-black text-slate-900 leading-tight">
                         {property.direccion}
@@ -152,7 +192,6 @@ export default function PropertyDetails() {
                     </div>
                 </header>
 
-                {/* Specs Grid */}
                 <div className="grid grid-cols-2 gap-4 mb-10">
                     <SpecCard icon={<Bed />} label={`${property.numHabitaciones} Habitaciones`} />
                     <SpecCard icon={<Droplets />} label={`${property.numBanos} Baños`} />
@@ -162,7 +201,6 @@ export default function PropertyDetails() {
                     <SpecCard icon={<CheckCircle2 />} label="Verificado" success />
                 </div>
 
-                {/* Description */}
                 <section className="mb-10">
                     <h3 className="text-lg font-extrabold text-slate-800 mb-3">Descripción</h3>
                     <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
@@ -170,9 +208,45 @@ export default function PropertyDetails() {
                     </p>
                 </section>
 
-                {/* Propietario */}
+                {/* Mapa Interactivo con capacidad de expansión */}
+                {property.latitud && property.longitud && (
+                    <section className={isMapExpanded ? "fixed inset-0 z-[200] bg-white m-0 flex flex-col" : "mb-10"}>
+                        {!isMapExpanded && <h3 className="text-lg font-extrabold text-slate-800 mb-3">Ubicación</h3>}
+                        
+                        <div className={`${isMapExpanded ? 'h-full w-full' : 'h-64 w-full rounded-2xl'} overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 relative z-0`}>
+                            
+                            <button
+                                onClick={() => setIsMapExpanded(!isMapExpanded)}
+                                className="absolute top-4 right-4 z-[400] p-3 bg-white/90 backdrop-blur-md rounded-full text-slate-800 shadow-lg hover:bg-white transition-all border border-slate-200"
+                                title={isMapExpanded ? "Contraer mapa" : "Expandir mapa"}
+                            >
+                                {isMapExpanded ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                            </button>
+
+                            <MapContainer 
+                                center={[property.latitud, property.longitud]} 
+                                zoom={15} 
+                                scrollWheelZoom={isMapExpanded}
+                                style={{ height: '100%', width: '100%', zIndex: 0 }}
+                            >
+                                <MapUpdater lat={property.latitud} lng={property.longitud} isExpanded={isMapExpanded} />
+                                
+                                <TileLayer
+                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                />
+                                <Marker position={[property.latitud, property.longitud]}>
+                                    <Popup className="font-sans">
+                                        <strong>{property.precio}€ / mes</strong><br/>
+                                        {property.direccion}
+                                    </Popup>
+                                </Marker>
+                            </MapContainer>
+                        </div>
+                    </section>
+                )}
+
                 <section className="bg-white rounded-3xl p-6 mb-8 border-l-[6px] border-[rgb(232,56,93)] shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-                    {/* Sutil círculo de fondo con el color de marca */}
                     <div className="absolute -right-4 -top-4 w-24 h-24 bg-[rgb(232,56,93)] opacity-[0.03] rounded-full pointer-events-none" />
                     
                     <h3 className="text-[10px] font-black text-[rgb(232,56,93)] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
@@ -197,38 +271,30 @@ export default function PropertyDetails() {
                 </section>
             </div>
 
-            {/* Interaction Action Bar (Aceptar / Rechazar) */}
-            <div className="fixed bottom-0 inset-x-0 p-8 pb-10 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none z-50 flex justify-center">
-                <div className="flex gap-8 pointer-events-auto items-center">
-                    {/* Botón RECHAZAR */}
-                    <motion.button
-                        whileHover={{ 
-                            scale: 1.15, 
-                            rotate: -10,
-                            boxShadow: "0 20px 25px -5px rgba(220, 38, 38, 0.15)"
-                        }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleInteraction('DISLIKE')}
-                        className="w-16 h-16 rounded-full bg-white shadow-xl shadow-red-100 flex items-center justify-center text-red-500 border border-red-50 border-b-4 border-b-red-100"
-                    >
-                        <X className="w-6 h-6" strokeWidth={4} />
-                    </motion.button>
+            {/* Ocultamos los botones de interacción inferiores cuando el mapa ocupa la pantalla */}
+            {!isMapExpanded && (
+                <div className="fixed bottom-0 inset-x-0 p-8 pb-10 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none z-50 flex justify-center">
+                    <div className="flex gap-8 pointer-events-auto items-center">
+                        <motion.button
+                            whileHover={{ scale: 1.15, rotate: -10, boxShadow: "0 20px 25px -5px rgba(220, 38, 38, 0.15)" }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleInteraction('DISLIKE')}
+                            className="w-16 h-16 rounded-full bg-white shadow-xl shadow-red-100 flex items-center justify-center text-red-500 border border-red-50 border-b-4 border-b-red-100"
+                        >
+                            <X className="w-6 h-6" strokeWidth={4} />
+                        </motion.button>
 
-                    {/* Botón ACEPTAR */}
-                    <motion.button
-                        whileHover={{ 
-                            scale: 1.15, 
-                            rotate: 10,
-                            boxShadow: "0 20px 25px -5px rgba(16, 185, 129, 0.3)"
-                        }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleInteraction('LIKE')}
-                        className="w-16 h-16 rounded-full bg-emerald-500 shadow-2xl shadow-emerald-200 flex items-center justify-center text-white border-4 border-white"
-                    >
-                        <Heart className="w-5 h-5" fill="currentColor" />
-                    </motion.button>
+                        <motion.button
+                            whileHover={{ scale: 1.15, rotate: 10, boxShadow: "0 20px 25px -5px rgba(16, 185, 129, 0.3)" }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleInteraction('LIKE')}
+                            className="w-16 h-16 rounded-full bg-emerald-500 shadow-2xl shadow-emerald-200 flex items-center justify-center text-white border-4 border-white"
+                        >
+                            <Heart className="w-5 h-5" fill="currentColor" />
+                        </motion.button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* FULL SCREEN GALLERY OVERLAY */}
             <AnimatePresence>
@@ -239,7 +305,6 @@ export default function PropertyDetails() {
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[100] bg-black flex flex-col"
                     >
-                        {/* Modal Header */}
                         <div className="absolute top-0 inset-x-0 p-6 flex justify-between items-center z-50 bg-gradient-to-b from-black/80 to-transparent">
                             <span className="text-white font-bold tracking-widest text-sm">
                                 {activeImage + 1} / {property.fotos?.length || 1}
@@ -251,8 +316,6 @@ export default function PropertyDetails() {
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-
-                        {/* Image Viewer */}
                         <div className="flex-1 relative flex items-center justify-center overflow-hidden">
                             <AnimatePresence mode="wait">
                                 <motion.img
@@ -265,8 +328,6 @@ export default function PropertyDetails() {
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 />
                             </AnimatePresence>
-
-                            {/* Navigation Arrows */}
                             {property.fotos && property.fotos.length > 1 && (
                                 <>
                                     <button 
@@ -283,19 +344,6 @@ export default function PropertyDetails() {
                                     </button>
                                 </>
                             )}
-                        </div>
-
-                        {/* Preview Strip (Opcional, pero añade calidad) */}
-                        <div className="p-8 flex justify-center gap-3 bg-gradient-to-t from-black/80 to-transparent">
-                            {property.fotos?.map((f, i) => (
-                                <button 
-                                    key={i}
-                                    onClick={() => setActiveImage(i)}
-                                    className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all ${i === activeImage ? 'border-primary-500 scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
-                                >
-                                    <img src={f} className="w-full h-full object-cover" />
-                                </button>
-                            ))}
                         </div>
                     </motion.div>
                 )}
