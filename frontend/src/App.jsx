@@ -4,6 +4,7 @@ import TenantFeed from './pages/TenantFeed';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import PropertyDetails from './pages/PropertyDetails';
+import CandidatoDetails from './pages/CandidatoDetails';
 import ProfilePage from './pages/ProfilePage';
 import OnboardingPage from './pages/OnboardingPage';
 import MatchesPage from './pages/MatchesPage';
@@ -76,6 +77,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
+          <Route path="/candidato/:id" element={<CandidatoDetails />} />
           <Route path="/filtros" element={<TenantFeed />} />
           <Route path="/matches" element={<MatchesPage />} />
           <Route path="/perfil" element={<ProfilePage />} />

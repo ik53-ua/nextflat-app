@@ -30,6 +30,11 @@ export const getPropertyDetails = async (id) => {
   return response.data;
 };
 
+export const getUserDetails = async (id) => {
+  const response = await api.get(`/usuarios/${id}`);
+  return response.data;
+};
+
 export const getMatchesForUser = async (userId) => {
   const response = await api.get(`/matches/${userId}`);
   return response.data;

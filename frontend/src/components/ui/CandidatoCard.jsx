@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { Heart, X, MapPin, Briefcase, User, RotateCcw } from 'lucide-react';
+import { Heart, X, MapPin, Briefcase, RotateCcw, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * CandidatoCard — Tarjeta swipeable de persona para el feed del propietario (US-008).
@@ -16,6 +17,7 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
     const [hoverState, setHoverState] = useState('center');
     const cardRef = useRef(null);
     const controls = useAnimation();
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (hoverState === 'left') {
@@ -48,6 +50,7 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
     const handleClick = () => {
         if (hoverState === 'left' && onDislike) onDislike(item);
         if (hoverState === 'right' && onLike) onLike(item);
+        if (hoverState === 'center') navigate(`/candidato/${item.id}`);
     };
 
     // Fallback avatar si no hay foto de perfil
@@ -130,7 +133,7 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
 
             {/* ═══ TARJETA PRINCIPAL (foto + info) ═══ */}
             <motion.div
-                className="absolute inset-0 z-10 w-full h-full origin-center overflow-hidden flex bg-white"
+                className="absolute inset-0 z-10 w-full h-full origin-center overflow-hidden flex bg-white rounded-xl"
                 animate={controls}
                 onClick={handleClick}
                 style={{
@@ -194,19 +197,28 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
                     )}
 
                 </div>
-
-                {onRewind && (
-                    <div className="absolute bottom-6 right-6 z-30 pointer-events-auto">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onRewind(); }}
-                            className="flex items-center justify-center w-12 h-12 bg-white hover:bg-slate-100 text-[#e8385d] rounded-full shadow-2xl transition-transform active:scale-95"
-                            title="Deshacer último rechazo"
-                        >
-                            <RotateCcw className="w-6 h-6" />
-                        </button>
-                    </div>
-                )}
             </motion.div>
+
+            {/* ═══ FIXED UI ELEMENTS (No se mueven con la imagen) ═══ */}
+            <div className="absolute bottom-10 left-0 right-0 z-30 flex justify-center gap-4 pointer-events-auto">
+                {onRewind && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onRewind(); }}
+                        className="flex items-center justify-center w-11 h-11 bg-white hover:bg-slate-100 text-[#e8385d] rounded-full shadow-xl transition-transform active:scale-95 z-50"
+                        title="Deshacer último rechazo"
+                    >
+                        <RotateCcw className="w-5 h-5" />
+                    </button>
+                )}
+
+                <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/candidato/${item.id}`); }}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-white/30 backdrop-blur-xl hover:bg-white/40 text-white rounded-full border border-white/50 font-bold text-sm transition-all active:scale-95 shadow-xl group z-50"
+                >
+                    <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Ver Detalles
+                </button>
+            </div>
         </div>
     );
 }

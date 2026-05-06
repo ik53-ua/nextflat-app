@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Eye } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -11,6 +11,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [contacto, setContacto] = useState(null); // {id, nombre, imagen}
   const messagesEndRef = useRef(null);
 
   // Get current user
@@ -33,6 +34,20 @@ export default function ChatPage() {
         if (!chatRes.ok) throw new Error('Chat no encontrado');
         const chatData = await chatRes.json();
         setChatId(chatData.id);
+
+        // Cargar el match para obtener datos del contacto
+        const matchesRes = await fetch(`${API_URL}/api/matches/${currentUserId}`);
+        if (matchesRes.ok) {
+          const matchesData = await matchesRes.json();
+          const thisMatch = matchesData.find(m => m.matchId === Number(matchId));
+          if (thisMatch) {
+            setContacto({
+              id: thisMatch.contactoId,
+              nombre: thisMatch.nombreContacto,
+              imagen: thisMatch.imagenContacto,
+            });
+          }
+        }
 
         const msgRes = await fetch(`${API_URL}/api/chats/${chatData.id}/mensajes`);
         const msgData = await msgRes.json();
@@ -115,15 +130,35 @@ export default function ChatPage() {
             <ArrowLeft size={24} />
           </button>
           <div className="flex flex-col items-center flex-1">
-            <h1 className="text-lg font-bold text-gray-900 tracking-tight">Chat del Match</h1>
+            <h1 className="text-lg font-bold text-gray-900 tracking-tight">
+              {contacto?.nombre || 'Chat del Match'}
+            </h1>
             <span className="text-xs text-green-500 font-medium flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               En línea
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#e8385d] to-[#ff7b93] flex items-center justify-center shadow-md text-white font-bold">
-            NF
-          </div>
+          {/* Avatar del contacto — clic abre el perfil */}
+          <button
+            onClick={() => contacto?.id && navigate(`/candidato/${contacto.id}`, { state: { readOnly: true } })}
+            className="relative group focus:outline-none"
+            title="Ver perfil"
+          >
+            {contacto?.imagen ? (
+              <img
+                src={contacto.imagen}
+                alt={contacto.nombre}
+                className="w-10 h-10 rounded-full object-cover shadow-md transition-opacity group-hover:opacity-75"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#e8385d] to-[#ff7b93] flex items-center justify-center shadow-md text-white font-bold">
+                {contacto?.nombre?.charAt(0)?.toUpperCase() || 'NF'}
+              </div>
+            )}
+            <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+              <Eye className="w-4 h-4 text-white" />
+            </div>
+          </button>
         </div>
       </div>
 

@@ -61,6 +61,9 @@ export default function AppLayout({ children }) {
     const location = useLocation();
     const [toastDenegado, setToastDenegado] = useState(false);
 
+    // Rutas en las que ocultamos el header y la nav inferior (vistas de detalle inmersivas)
+    const isDetailPage = location.pathname.startsWith('/property/') || location.pathname.startsWith('/candidato/');
+
     useEffect(() => {
         if (sessionStorage.getItem('toastVerificacion') === 'denegado') {
             setToastDenegado(true);
@@ -84,7 +87,7 @@ export default function AppLayout({ children }) {
 
     return (
         <div className="h-screen w-full flex flex-col bg-slate-50 overflow-hidden">
-            <header className="flex justify-between items-center px-5 py-3 bg-white shadow-sm z-20 relative">
+            {!isDetailPage && <header className="flex justify-between items-center px-5 py-3 bg-white shadow-sm z-20 relative">
                 <h1 className="text-2xl font-extrabold tracking-tight"
                     style={{ color: '#e8385d' }}>
                     <Link to={homeRoute}>NextFlat</Link>
@@ -122,7 +125,7 @@ export default function AppLayout({ children }) {
                         </div>
                     )}
                 </div>
-            </header>
+            </header>}
 
             {/* Page Content */}
             <main className="flex-1 relative overflow-auto">
@@ -143,7 +146,7 @@ export default function AppLayout({ children }) {
                 {children}
             </main>
 
-            {user && user.rol !== 'SUPERVISOR' && (() => {
+            {!isDetailPage && user && user.rol !== 'SUPERVISOR' && (() => {
                 const isPropietario = user.rol === 'PROPIETARIO';
                 const tabs = isPropietario
                     ? [

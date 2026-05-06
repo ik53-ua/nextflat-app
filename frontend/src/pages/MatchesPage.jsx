@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMatchesForUser } from '../services/api';
+import { Eye } from 'lucide-react';
 
 
 function formatFecha(fechaISO) {
@@ -19,7 +20,7 @@ function AvatarFallback({ nombre }) {
 }
 
 // Añadimos "index" a las props
-function MatchCard({ match, onClick, index }) {
+function MatchCard({ match, onClick, onAvatarClick, index }) {
   const [imgError, setImgError] = useState(false);
 
   // Lógica para alternar colores: Pares (rosa suave), Impares (blanco)
@@ -28,21 +29,28 @@ function MatchCard({ match, onClick, index }) {
   return (
     <button
       onClick={() => onClick(match.matchId)}
-      // Cambiamos el hover y le inyectamos el bgColor
       className={`w-full flex items-center gap-4 px-4 py-3 hover:opacity-80 active:opacity-60 transition-colors text-left ${bgColor}`}
     >
-      {/* Avatar */}
-      <div className="flex-shrink-0">
+      {/* Avatar — clic independiente abre el perfil del candidato */}
+      <div
+        className="relative flex-shrink-0 group"
+        onClick={(e) => { e.stopPropagation(); onAvatarClick(match.contactoId); }}
+        title="Ver perfil"
+      >
         {match.imagenContacto && !imgError ? (
           <img
             src={match.imagenContacto}
             alt={match.nombreContacto}
-            className="w-14 h-14 rounded-full object-cover shadow-sm"
+            className="w-14 h-14 rounded-full object-cover shadow-sm transition-opacity group-hover:opacity-75"
             onError={() => setImgError(true)}
           />
         ) : (
           <AvatarFallback nombre={match.nombreContacto} />
         )}
+        {/* Ícono de ojo al hacer hover */}
+        <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+          <Eye className="w-5 h-5 text-white" />
+        </div>
       </div>
       {/* Texto */}
       <div className="flex-1 min-w-0">
@@ -92,6 +100,10 @@ export default function MatchesPage() {
     navigate(`/chat/${matchId}`);
   };
 
+  const handleAvatarClick = (contactoId) => {
+    if (contactoId) navigate(`/candidato/${contactoId}`, { state: { readOnly: true } });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -120,6 +132,7 @@ export default function MatchesPage() {
             key={match.matchId}
             match={match}
             onClick={handleMatchClick}
+            onAvatarClick={handleAvatarClick}
             index={index}
           />
         ))}
