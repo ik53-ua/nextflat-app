@@ -36,26 +36,33 @@ public class FeedService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    public List<FeedInmuebleDTO> getFeedForUser(Long usuarioId, String municipio, Double precioMax) {
+    public List<FeedInmuebleDTO> getFeedForUser(Long usuarioId, String municipio, java.math.BigDecimal precioMin, java.math.BigDecimal precioMax, 
+                                                Integer numHabitaciones, Integer numBanos, Boolean tieneAscensor, 
+                                                Boolean admiteMascotas, Boolean esCompartido) {
         String municipioDB = (municipio != null && !municipio.trim().isEmpty()) ? municipio.trim().toLowerCase() : null;
         
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-                
-        List<Long> usuariosIds = new java.util.ArrayList<>();
-        usuariosIds.add(usuarioId);
-        
-        // Si tiene grupo, añadimos también a sus compañeros
-        if (usuario.getGrupo() != null) {
-            List<Usuario> miembros = usuarioRepository.findByGrupoId(usuario.getGrupo().getId());
-            for (Usuario m : miembros) {
-                if (!usuariosIds.contains(m.getId())) {
-                    usuariosIds.add(m.getId());
+        List<Long> usuariosIds = null;
+
+        if (usuarioId != null) {
+            Usuario usuario = usuarioRepository.findById(usuarioId)
+                    .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                    
+            usuariosIds = new java.util.ArrayList<>();
+            usuariosIds.add(usuarioId);
+            
+            // Si tiene grupo, añadimos también a sus compañeros
+            if (usuario.getGrupo() != null) {
+                List<Usuario> miembros = usuarioRepository.findByGrupoId(usuario.getGrupo().getId());
+                for (Usuario m : miembros) {
+                    if (!usuariosIds.contains(m.getId())) {
+                        usuariosIds.add(m.getId());
+                    }
                 }
             }
         }
 
-        List<Inmueble> inmuebles = inmuebleRepository.findFeedForUser(usuariosIds, municipioDB, precioMax);
+        List<Inmueble> inmuebles = inmuebleRepository.findFeedForUser(usuariosIds, municipioDB, precioMin, precioMax, 
+                numHabitaciones, numBanos, tieneAscensor, admiteMascotas, esCompartido);
 
         return inmuebles.stream().map(inmueble -> {
             FeedInmuebleDTO dto = new FeedInmuebleDTO();

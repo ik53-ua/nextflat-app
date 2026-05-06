@@ -18,10 +18,24 @@ export default function TenantFeed() {
   const [showFilters, setShowFilters] = useState(false);
 
   const [municipioFilter, setMunicipioFilter] = useState("");
-  const [precioMaxFilter, setPrecioMaxFilter] = useState(1500);
+  const [precioMinFilter, setPrecioMinFilter] = useState(0);
+  const [precioMaxFilter, setPrecioMaxFilter] = useState(2000);
+  const [numHabitacionesFilter, setNumHabitacionesFilter] = useState(null);
+  const [numBanosFilter, setNumBanosFilter] = useState(null);
+  const [tieneAscensorFilter, setTieneAscensorFilter] = useState(null);
+  const [admiteMascotasFilter, setAdmiteMascotasFilter] = useState(null);
+  const [esCompartidoFilter, setEsCompartidoFilter] = useState(null);
 
-  const [appliedMunicipio, setAppliedMunicipio] = useState("");
-  const [appliedPrecioMax, setAppliedPrecioMax] = useState(null);
+  const [appliedFilters, setAppliedFilters] = useState({
+    municipio: "",
+    precioMin: null,
+    precioMax: null,
+    numHabitaciones: null,
+    numBanos: null,
+    tieneAscensor: null,
+    admiteMascotas: null,
+    esCompartido: null,
+  });
 
   const usuarioGuardado = localStorage.getItem("usuarioLogueado");
   const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
@@ -33,15 +47,15 @@ export default function TenantFeed() {
     currentUser.profesion &&
     currentUser.bio;
 
-  const fetchFeed = async (municipio = appliedMunicipio, precioMax = appliedPrecioMax) => {
+  const fetchFeed = async (filtros = appliedFilters) => {
     setLoading(true);
     try {
       let data;
       // Si no hay ID, llamamos al endpoint público; si lo hay, al feed personalizado
       if (!userId) {
-        data = await getPublicFeed();
+        data = await getPublicFeed(filtros);
       } else {
-        data = await getFeedForUser(userId, { municipio, precioMax });
+        data = await getFeedForUser(userId, filtros);
       }
 
       if (Array.isArray(data)) {
@@ -147,7 +161,7 @@ export default function TenantFeed() {
 
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden relative">
+    <div className="w-full h-full flex flex-col overflow-hidden relative pt-6">
       <div className="flex-1 relative flex items-center justify-center">
         {loading ? (
           <div className="flex flex-col items-center text-slate-500 space-y-4">
@@ -331,71 +345,172 @@ export default function TenantFeed() {
       {showFilters && (
         <div
           className="absolute inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
-          onClick={handleCloseModal} /* <--- Cierra al hacer clic fuera */
+          style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+          onClick={handleCloseModal}
         >
           <div
-            className="w-full bg-white rounded-t-3xl shadow-2xl p-6 pb-10"
-            style={{ animation: "nfSlideUp 0.3s ease-out forwards" }}
+            className="w-full max-h-[85vh] bg-slate-50 shadow-2xl p-8 pt-12 pb-12 overflow-y-auto"
+            style={{ animation: "nfSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Filtros de Búsqueda</h2>
-              <button onClick={handleCloseModal} className="text-slate-400 font-bold p-2">✕</button>
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Filtros</h2>
+              <button 
+                onClick={handleCloseModal} 
+                className="w-12 h-12 flex items-center justify-center bg-white text-slate-800 rounded-full hover:bg-slate-200 transition-colors shadow-sm"
+              >
+                <span className="text-xl font-bold">✕</span>
+              </button>
             </div>
 
             {/* Filtro: Municipio */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-slate-600 mb-2">Municipio</label>
+            <div className="mb-8">
+              <label className="block text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Municipio</label>
               <input
                 type="text"
                 placeholder="Ej: Madrid, Barcelona, Alicante..."
                 value={municipioFilter}
                 onChange={(e) => setMunicipioFilter(e.target.value)}
-                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#e8385d] focus:outline-none"
+                className="w-full p-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-[#e8385d] focus:outline-none transition-all text-slate-700 font-medium"
               />
             </div>
 
-            {/* Filtro: Precio Máximo */}
+            {/* Filtro: Precio */}
             <div className="mb-8">
-              <div className="flex justify-between mb-2">
-                <label className="text-sm font-semibold text-slate-600">Precio Máximo</label>
-                <span className="font-bold text-[#e8385d]">{precioMaxFilter}€</span>
+              <div className="flex justify-between items-end mb-4">
+                <label className="text-sm font-bold text-slate-800 uppercase tracking-wider">Presupuesto</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">{precioMinFilter}€</span>
+                  <span className="text-slate-300">─</span>
+                  <span className="text-sm font-black text-[#e8385d] bg-[#e8385d]/10 px-3 py-1 rounded-lg">{precioMaxFilter}€</span>
+                </div>
               </div>
-              <input
-                type="range"
-                min="200"
-                max="3000"
-                step="50"
-                value={precioMaxFilter}
-                onChange={(e) => setPrecioMaxFilter(Number(e.target.value))}
-                className="w-full accent-[#e8385d]"
-              />
+              <div className="space-y-6">
+                <div>
+                   <p className="text-[10px] font-bold text-slate-400 mb-2 uppercase">Mínimo</p>
+                   <input
+                    type="range"
+                    min="0"
+                    max="2000"
+                    step="50"
+                    value={precioMinFilter}
+                    onChange={(e) => setPrecioMinFilter(Number(e.target.value))}
+                    className="w-full accent-[#e8385d] h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 mb-2 uppercase">Máximo</p>
+                  <input
+                    type="range"
+                    min="200"
+                    max="3000"
+                    step="50"
+                    value={precioMaxFilter}
+                    onChange={(e) => setPrecioMaxFilter(Number(e.target.value))}
+                    className="w-full accent-[#e8385d] h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Habitaciones y Baños */}
+            <div className="grid grid-cols-2 gap-6 mb-8">
+              <div>
+                <label className="block text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Habitaciones</label>
+                <select 
+                  value={numHabitacionesFilter || ""} 
+                  onChange={(e) => setNumHabitacionesFilter(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full p-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-[#e8385d] focus:outline-none transition-all font-bold text-slate-700"
+                >
+                  <option value="">Cualquiera</option>
+                  <option value="1">1+</option>
+                  <option value="2">2+</option>
+                  <option value="3">3+</option>
+                  <option value="4">4+</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Baños</label>
+                <select 
+                  value={numBanosFilter || ""} 
+                  onChange={(e) => setNumBanosFilter(e.target.value ? Number(e.target.value) : null)}
+                  className="w-full p-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-[#e8385d] focus:outline-none transition-all font-bold text-slate-700"
+                >
+                  <option value="">Cualquiera</option>
+                  <option value="1">1+</option>
+                  <option value="2">2+</option>
+                  <option value="3">3+</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Características */}
+            <div className="mb-10">
+              <label className="block text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">Extras</label>
+              <div className="flex flex-wrap gap-3">
+                {[
+                  { label: "Ascensor", state: tieneAscensorFilter, setter: setTieneAscensorFilter, icon: "🛗" },
+                  { label: "Mascotas", state: admiteMascotasFilter, setter: setAdmiteMascotasFilter, icon: "🐾" },
+                  { label: "Compartido", state: esCompartidoFilter, setter: setEsCompartidoFilter, icon: "👥" },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => item.setter(item.state === null ? true : item.state === true ? false : null)}
+                    className={`px-5 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 transition-all border-2 ${
+                      item.state === true 
+                        ? "bg-[#e8385d] border-[#e8385d] text-white shadow-lg shadow-[#e8385d]/20" 
+                        : item.state === false
+                          ? "bg-slate-800 border-slate-800 text-white"
+                          : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                    }`}
+                  >
+                    <span>{item.icon}</span>
+                    {item.label}
+                    {item.state === false && <span className="text-[10px] opacity-60 ml-1">NO</span>}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-3 px-1 font-medium italic">
+                * Pulsa una vez para incluir, dos para excluir, tres para ignorar.
+              </p>
             </div>
 
             {/* Botones de acción */}
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 onClick={() => {
                   setMunicipioFilter("");
-                  setPrecioMaxFilter(1500);
-                  setAppliedMunicipio("");
-                  setAppliedPrecioMax(null);
-                  navigate('/feed'); /* <--- Volvemos al feed */
-                  fetchFeed("", null);
+                  setPrecioMinFilter(0);
+                  setPrecioMaxFilter(2000);
+                  setNumHabitacionesFilter(null);
+                  setNumBanosFilter(null);
+                  setTieneAscensorFilter(null);
+                  setAdmiteMascotasFilter(null);
+                  setEsCompartidoFilter(null);
+                  
+                  // No navegamos ni cerramos, solo reseteamos los estados locales de los inputs
                 }}
-                className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                className="flex-1 py-4 rounded-2xl font-black text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all uppercase tracking-widest text-xs"
               >
                 Limpiar
               </button>
               <button
                 onClick={() => {
-                  setAppliedMunicipio(municipioFilter);
-                  setAppliedPrecioMax(precioMaxFilter);
-                  navigate('/feed'); /* <--- Volvemos al feed */
-                  fetchFeed(municipioFilter, precioMaxFilter);
+                  const newFilters = {
+                    municipio: municipioFilter,
+                    precioMin: precioMinFilter,
+                    precioMax: precioMaxFilter,
+                    numHabitaciones: numHabitacionesFilter,
+                    numBanos: numBanosFilter,
+                    tieneAscensor: tieneAscensorFilter,
+                    admiteMascotas: admiteMascotasFilter,
+                    esCompartido: esCompartidoFilter,
+                  };
+                  setAppliedFilters(newFilters);
+                  navigate('/feed');
+                  fetchFeed(newFilters);
                 }}
-                className="flex-[2] py-3 rounded-xl font-bold text-white transition-colors"
+                className="flex-[2] py-4 rounded-2xl font-black text-white shadow-xl shadow-[#e8385d]/30 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-xs"
                 style={{ background: "linear-gradient(135deg, #e8385d 0%, #ff6b6b 100%)" }}
               >
                 Aplicar Filtros

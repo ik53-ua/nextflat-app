@@ -11,8 +11,32 @@ export const getFeedForUser = async (userId, filtros = {}) => {
     params.append('municipio', filtros.municipio.trim());
   }
 
-  if (filtros.precioMax) {
+  if (filtros.precioMin !== undefined && filtros.precioMin !== null) {
+    params.append('precioMin', filtros.precioMin);
+  }
+
+  if (filtros.precioMax !== undefined && filtros.precioMax !== null) {
     params.append('precioMax', filtros.precioMax);
+  }
+
+  if (filtros.numHabitaciones !== undefined && filtros.numHabitaciones !== null) {
+    params.append('numHabitaciones', filtros.numHabitaciones);
+  }
+
+  if (filtros.numBanos !== undefined && filtros.numBanos !== null) {
+    params.append('numBanos', filtros.numBanos);
+  }
+
+  if (filtros.tieneAscensor !== undefined && filtros.tieneAscensor !== null) {
+    params.append('tieneAscensor', filtros.tieneAscensor);
+  }
+
+  if (filtros.admiteMascotas !== undefined && filtros.admiteMascotas !== null) {
+    params.append('admiteMascotas', filtros.admiteMascotas);
+  }
+
+  if (filtros.esCompartido !== undefined && filtros.esCompartido !== null) {
+    params.append('esCompartido', filtros.esCompartido);
   }
 
   const response = await api.get(`/feed/${userId}?${params.toString()}`);
@@ -68,8 +92,42 @@ export const undoLastCandidatoSwipe = async (propietarioId) => {
   return response.data;
 };
 
-export const getPublicFeed = async () => {
-  const response = await api.get(`/feed/public`);
+export const getPublicFeed = async (filtros = {}) => {
+  const params = new URLSearchParams();
+
+  if (filtros.municipio && filtros.municipio.trim() !== "") {
+    params.append('municipio', filtros.municipio.trim());
+  }
+
+  if (filtros.precioMin !== undefined && filtros.precioMin !== null) {
+    params.append('precioMin', filtros.precioMin);
+  }
+
+  if (filtros.precioMax !== undefined && filtros.precioMax !== null) {
+    params.append('precioMax', filtros.precioMax);
+  }
+
+  if (filtros.numHabitaciones !== undefined && filtros.numHabitaciones !== null) {
+    params.append('numHabitaciones', filtros.numHabitaciones);
+  }
+
+  if (filtros.numBanos !== undefined && filtros.numBanos !== null) {
+    params.append('numBanos', filtros.numBanos);
+  }
+
+  if (filtros.tieneAscensor !== undefined && filtros.tieneAscensor !== null) {
+    params.append('tieneAscensor', filtros.tieneAscensor);
+  }
+
+  if (filtros.admiteMascotas !== undefined && filtros.admiteMascotas !== null) {
+    params.append('admiteMascotas', filtros.admiteMascotas);
+  }
+
+  if (filtros.esCompartido !== undefined && filtros.esCompartido !== null) {
+    params.append('esCompartido', filtros.esCompartido);
+  }
+
+  const response = await api.get(`/feed/public?${params.toString()}`);
   return response.data;
 };
 
