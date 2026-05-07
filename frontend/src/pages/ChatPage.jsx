@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Eye } from 'lucide-react';
+import { ArrowLeft, Send, Eye, Star, MessageSquareText, X, Loader2 } from 'lucide-react';
+import ValoracionModal from '../components/ui/ValoracionModal';
+import StarRating from '../components/ui/StarRating';
+import { checkYaValorado, getStatsValoracion, getValoracionesUsuario } from '../services/api';
+
+
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -13,6 +18,16 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [contacto, setContacto] = useState(null); // {id, nombre, imagen}
   const messagesEndRef = useRef(null);
+
+
+  const [showValoracionModal, setShowValoracionModal] = useState(false);
+  const [yaValorado, setYaValorado] = useState(false);
+  const [checkingValoracion, setCheckingValoracion] = useState(false);
+
+  const [showResenasPanel, setShowResenasPanel] = useState(false);
+  const [statsContacto, setStatsContacto] = useState(null);
+  const [resenasContacto, setResenasContacto] = useState([]);
+  const [loadingResenas, setLoadingResenas] = useState(false);
 
   // Get current user
   const currentUser = JSON.parse(localStorage.getItem('usuarioLogueado')) || { id: 1 };
@@ -60,6 +75,30 @@ export default function ChatPage() {
     };
     fetchChatAndMessages();
   }, [matchId]);
+
+
+  useEffect(() => {
+    if (!currentUserId || !contacto?.id) return;
+    checkYaValorado(currentUserId, contacto.id)
+      .then(setYaValorado)
+      .catch(() => { });
+  }, [currentUserId, contacto?.id]);
+
+  useEffect(() => {
+    if (!showResenasPanel || !contacto?.id) return;
+    setLoadingResenas(true);
+    Promise.all([
+      getStatsValoracion(contacto.id),
+      getValoracionesUsuario(contacto.id),
+    ])
+      .then(([stats, lista]) => {
+        setStatsContacto(stats);
+        setResenasContacto(lista);
+      })
+      .catch(() => { })
+      .finally(() => setLoadingResenas(false));
+  }, [showResenasPanel, contacto?.id]);
+
 
   // Polling for new messages
   useEffect(() => {
@@ -137,6 +176,27 @@ export default function ChatPage() {
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
               En línea
             </span>
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                onClick={() => setShowValoracionModal(true)}
+                disabled={yaValorado}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all
+                  ${yaValorado
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100 active:scale-95'}`}
+              >
+                <Star className={`w-3 h-3 ${yaValorado ? '' : 'fill-amber-400'}`} />
+                {yaValorado ? 'Valorado' : 'Valorar'}
+              </button>
+
+              <button
+                onClick={() => setShowResenasPanel(true)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100 active:scale-95 transition-all"
+              >
+                <MessageSquareText className="w-3 h-3" />
+                Ver reseñas
+              </button>
+            </div>
           </div>
           {/* Avatar del contacto — clic abre el perfil */}
           <button
@@ -228,6 +288,95 @@ export default function ChatPage() {
           </button>
         </form>
       </div>
+
+      {showValoracionModal && contacto && (
+        <ValoracionModal
+          autorId={currentUserId}
+          destino={{ id: contacto.id, nombre: contacto.nombre, fotoPerfil: contacto.imagen }}
+          onClose={() => setShowValoracionModal(false)}
+          onSuccess={() => setYaValorado(true)}
+        />
+      )}
+
+      {showResenasPanel && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowResenasPanel(false)} />
+          <div className="relative w-full max-w-sm h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right-4 duration-300">
+
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                {contacto?.imagen ? (
+                  <img src={contacto.imagen} alt={contacto.nombre} className="w-9 h-9 rounded-full object-cover" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center text-[#e8385d] font-black">
+                    {contacto?.nombre?.[0]?.toUpperCase() ?? '?'}
+                  </div>
+                )}
+                <div>
+                  <p className="font-black text-slate-800 text-sm">{contacto?.nombre}</p>
+                  <p className="text-xs text-slate-400">Reseñas recibidas</p>
+                </div>
+              </div>
+              <button onClick={() => setShowResenasPanel(false)} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            {statsContacto && (
+              <div className="flex items-center gap-4 px-5 py-4 bg-amber-50 border-b border-amber-100">
+                <span className="text-4xl font-black text-slate-800">
+                  {statsContacto.total > 0 ? statsContacto.media?.toFixed(1) : '—'}
+                </span>
+                <div>
+                  <StarRating value={Math.round(statsContacto.media ?? 0)} readonly size={18} />
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {statsContacto.total} reseña{statsContacto.total !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {loadingResenas ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#e8385d]" />
+                </div>
+              ) : resenasContacto.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-center">
+                  <MessageSquareText className="w-10 h-10 text-slate-200 mb-2" />
+                  <p className="text-sm text-slate-400 font-medium">Sin reseñas todavía</p>
+                  <p className="text-xs text-slate-300 mt-1">Sé el primero en valorar a {contacto?.nombre?.split(' ')[0]}</p>
+                </div>
+              ) : (
+                resenasContacto.map((v) => (
+                  <div key={v.id} className="flex gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    {v.autorFoto ? (
+                      <img src={v.autorFoto} alt={v.autorNombre} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center text-[#e8385d] font-black text-sm flex-shrink-0">
+                        {v.autorNombre?.[0]?.toUpperCase() ?? '?'}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-bold text-slate-800 text-sm truncate">{v.autorNombre}</p>
+                        <StarRating value={v.puntuacion} readonly size={13} />
+                      </div>
+                      {v.comentario && (
+                        <p className="text-sm text-slate-600 leading-snug">{v.comentario}</p>
+                      )}
+                      <p className="text-xs text-slate-400 mt-1">
+                        {new Date(v.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Inject custom animation styles */}
       <style>{`

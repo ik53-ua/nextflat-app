@@ -92,3 +92,29 @@ export const getMiembrosGrupo = async (usuarioId) => {
   const response = await api.get(`/usuarios/${usuarioId}/grupo/miembros`);
   return response.data;
 };
+
+
+
+/** Crea una nueva valoración */
+export const crearValoracion = async ({ autorId, destinoId, puntuacion, comentario }) => {
+  const response = await api.post('/valoraciones', { autorId, destinoId, puntuacion, comentario });
+  return response.data;
+};
+
+/** Lista histórica de valoraciones recibidas por un usuario */
+export const getValoracionesUsuario = async (destinoId) => {
+  const response = await api.get(`/valoraciones/usuario/${destinoId}`);
+  return response.data;
+};
+
+/** Media y total de reseñas de un usuario */
+export const getStatsValoracion = async (destinoId) => {
+  const response = await api.get(`/valoraciones/usuario/${destinoId}/stats`);
+  return response.data;
+};
+
+/** Comprueba si el usuario ya valoró al destino */
+export const checkYaValorado = async (autorId, destinoId) => {
+  const response = await api.get('/valoraciones/check', { params: { autorId, destinoId } });
+  return response.data.yaValorado; // boolean
+};

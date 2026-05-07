@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, User, Briefcase, Calendar, FileText, Camera, CheckCircle2, Loader2, Copy, Users } from 'lucide-react';
+import { ChevronLeft, User, Briefcase, Calendar, FileText, Camera, CheckCircle2, Loader2, Copy, Users, Star, MessageSquareText } from 'lucide-react';
 import { uploadImage } from '../services/supabase';
 import VerificacionPerfil from '../components/VerificacionPerfil';
-import { crearGrupoBusqueda, abandonarGrupoBusqueda, unirseAGrupoBusqueda, getMiembrosGrupo } from '../services/api';
+import StarRating from '../components/ui/StarRating';
+import ValoracionModal from '../components/ui/ValoracionModal';
+import { crearGrupoBusqueda, abandonarGrupoBusqueda, unirseAGrupoBusqueda, getMiembrosGrupo, getValoracionesUsuario, getStatsValoracion, checkYaValorado } from '../services/api';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  
+
   // Estado del formulario original
   const [formData, setFormData] = useState({
     nombre: '',
@@ -17,10 +19,10 @@ export default function ProfilePage() {
     fechaNacimiento: '',
     bio: ''
   });
-  
+
   const [usuarioId, setUsuarioId] = useState(null);
   const [userRole, setUserRole] = useState('');
-  
+
   // Estados para la gestión del grupo
   const [grupoInfo, setGrupoInfo] = useState(null);
   const [loadingGrupo, setLoadingGrupo] = useState(false);
@@ -39,12 +41,37 @@ export default function ProfilePage() {
   });
   const [passwordError, setPasswordError] = useState('');
 
+
+  const [statsValoracion, setStatsValoracion] = useState(null);
+  const [valoraciones, setValoraciones] = useState([]);
+  const [showValoraciones, setShowValoraciones] = useState(false);
+  const [loadingValoraciones, setLoadingValoraciones] = useState(false);
+  const [showValoracionModal, setShowValoracionModal] = useState(false);
+  const [destinoValoracion, setDestinoValoracion] = useState(null);
+  const [yaValorado, setYaValorado] = useState(false);
+
   const cargarMiembros = async (uid) => {
     try {
       const miembros = await getMiembrosGrupo(uid);
       setMiembrosGrupo(miembros);
     } catch (e) {
       console.error("Error al cargar miembros del grupo");
+    }
+  };
+
+  const cargarValoraciones = async (uid) => {
+    setLoadingValoraciones(true);
+    try {
+      const [stats, lista] = await Promise.all([
+        getStatsValoracion(uid),
+        getValoracionesUsuario(uid),
+      ]);
+      setStatsValoracion(stats);
+      setValoraciones(lista);
+    } catch (e) {
+      console.error('Error al cargar valoraciones');
+    } finally {
+      setLoadingValoraciones(false);
     }
   };
 
@@ -55,11 +82,11 @@ export default function ProfilePage() {
       setUsuarioId(user.id);
       setUserRole(user.rol || '');
       setGrupoInfo(user.grupo || null);
-      
+
       if (user.grupo) {
         cargarMiembros(user.id);
       }
-      
+
       setFormData({
         nombre: user.nombre || '',
         profesion: user.profesion || '',
@@ -68,6 +95,10 @@ export default function ProfilePage() {
         fotoPerfil: user.fotoPerfil || ''
       });
       setFotoPreview(user.fotoPerfil || null);
+
+      // Cargar stats de valoraciones propias
+      cargarValoraciones(user.id);
+
     } else {
       navigate('/login');
     }
@@ -94,11 +125,11 @@ export default function ProfilePage() {
     e.preventDefault();
     setLoading(true);
     setSuccess(false);
-    setPasswordError(''); 
-    
+    setPasswordError('');
+
     try {
       let finalPhotoUrl = formData.fotoPerfil;
-      
+
       // 1. Gestión de contraseña
       if (showPasswordFields && passwords.newPassword) {
         if (passwords.newPassword !== passwords.confirmPassword) {
@@ -106,7 +137,7 @@ export default function ProfilePage() {
           setLoading(false);
           return;
         }
-        
+
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
         const passResponse = await fetch(`${apiUrl}/api/usuarios/${usuarioId}/password`, {
           method: 'PUT',
@@ -116,14 +147,14 @@ export default function ProfilePage() {
             newPassword: passwords.newPassword
           })
         });
-        
+
         if (!passResponse.ok) {
           const errorMsg = await passResponse.text();
           setPasswordError(errorMsg);
           setLoading(false);
           return;
         }
-        
+
         setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
         setShowPasswordFields(false);
       }
@@ -143,7 +174,7 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, fotoPerfil: finalPhotoUrl }),
       });
-      
+
       if (response.ok) {
         const userUpdated = await response.json();
         localStorage.setItem('usuarioLogueado', JSON.stringify(userUpdated));
@@ -211,6 +242,17 @@ export default function ProfilePage() {
     }
   };
 
+
+
+  const handleAbrirModalValorar = async (destino) => {
+    const ya = await checkYaValorado(usuarioId, destino.id);
+    setYaValorado(ya);
+    setDestinoValoracion(destino);
+    setShowValoracionModal(true);
+  };
+
+
+
   // Validar si el perfil tiene todos los campos requeridos
   const isPerfilCompleto = Boolean(
     formData.nombre?.trim() &&
@@ -220,15 +262,107 @@ export default function ProfilePage() {
     formData.fotoPerfil
   );
 
+
+
+
+  // Render de una tarjeta de valoración 
+  const ValoracionCard = ({ v }) => (
+    <div className="flex gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+      {v.autorFoto ? (
+        <img src={v.autorFoto} alt={v.autorNombre} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+      ) : (
+        <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-[#e8385d] font-black flex-shrink-0">
+          {v.autorNombre?.[0]?.toUpperCase() ?? '?'}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1">
+          <p className="font-bold text-slate-800 text-sm truncate">{v.autorNombre}</p>
+          <StarRating value={v.puntuacion} readonly size={14} />
+        </div>
+        {v.comentario && (
+          <p className="text-sm text-slate-600 leading-snug">{v.comentario}</p>
+        )}
+        <p className="text-xs text-slate-400 mt-1">
+          {new Date(v.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+      </div>
+    </div>
+  );
+
+
+
+
   return (
     <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden pb-20 relative" style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)' }}>
       {/* Burbujas decorativas de fondo */}
       <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '320px', height: '320px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: '260px', height: '260px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
-      
+
       <div className="px-6 py-8 max-w-lg mx-auto w-full relative z-10 mt-4 mb-8">
         <div className="bg-white rounded-3xl shadow-2xl p-8">
-          
+
+
+
+          {/* ── Sección de valoraciones recibidas (COS #3 y #4) ──────────── */}
+          <div className="mb-6 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                  <h3 className="font-black text-slate-800">Mis valoraciones</h3>
+                </div>
+                {/* Estadísticas en vivo (COS #3) */}
+                {statsValoracion === null ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-300" />
+                ) : statsValoracion.total > 0 ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-2xl font-black text-slate-800">
+                      {statsValoracion.media?.toFixed(1) ?? '—'}
+                    </span>
+                    <div>
+                      <StarRating value={Math.round(statsValoracion.media ?? 0)} readonly size={14} />
+                      <p className="text-xs text-slate-400 leading-tight">
+                        {statsValoracion.total} reseña{statsValoracion.total !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">Sin reseñas aún</p>
+                )}
+
+              </div>
+
+              {/* Botón para expandir el listado (COS #4) */}
+              {statsValoracion && statsValoracion.total > 0 && (
+                <button
+                  onClick={() => setShowValoraciones(!showValoraciones)}
+                  className="mt-3 w-full text-center text-xs font-bold text-[#e8385d] uppercase tracking-wider hover:underline flex items-center justify-center gap-1"
+                >
+                  <MessageSquareText className="w-3.5 h-3.5" />
+                  {showValoraciones ? 'Ocultar reseñas' : `Ver las ${statsValoracion.total} reseña${statsValoracion.total !== 1 ? 's' : ''}`}
+                </button>
+              )}
+            </div>
+
+            {/* Listado expandible */}
+            {showValoraciones && (
+              <div className="border-t border-slate-100 p-4 space-y-3 max-h-80 overflow-y-auto">
+                {loadingValoraciones ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#e8385d]" />
+                  </div>
+                ) : valoraciones.length === 0 ? (
+                  <p className="text-sm text-slate-400 text-center py-3">No hay reseñas todavía</p>
+                ) : (
+                  valoraciones.map((v) => <ValoracionCard key={v.id} v={v} />)
+                )}
+              </div>
+            )}
+          </div>
+          {/* ─────────────────────────────────────────────────────────────── */}
+
+
           {/* Cabecera con Avatar */}
           <div className="flex flex-col items-center mb-8">
             <div className="relative">
@@ -240,10 +374,10 @@ export default function ProfilePage() {
                 )}
               </div>
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-              <button 
-                type="button" 
-                onClick={() => fileInputRef.current.click()} 
-                className="absolute bottom-0 right-0 p-2.5 rounded-full text-white shadow-lg transition-transform hover:scale-110" 
+              <button
+                type="button"
+                onClick={() => fileInputRef.current.click()}
+                className="absolute bottom-0 right-0 p-2.5 rounded-full text-white shadow-lg transition-transform hover:scale-110"
                 style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 100%)' }}
               >
                 <Camera className="w-4 h-4" />
@@ -267,13 +401,13 @@ export default function ProfilePage() {
               <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5">
                 <User className="w-4 h-4 text-[#e8385d]" /> Nombre completo
               </label>
-              <input 
-                name="nombre" 
-                type="text" 
-                required 
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" 
-                value={formData.nombre} 
-                onChange={handleChange} 
+              <input
+                name="nombre"
+                type="text"
+                required
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                value={formData.nombre}
+                onChange={handleChange}
               />
             </div>
 
@@ -282,12 +416,12 @@ export default function ProfilePage() {
               <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5">
                 <Briefcase className="w-4 h-4 text-[#e8385d]" /> Profesión
               </label>
-              <input 
-                name="profesion" 
-                type="text" 
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" 
-                value={formData.profesion} 
-                onChange={handleChange} 
+              <input
+                name="profesion"
+                type="text"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                value={formData.profesion}
+                onChange={handleChange}
               />
             </div>
 
@@ -296,12 +430,12 @@ export default function ProfilePage() {
               <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5">
                 <Calendar className="w-4 h-4 text-[#e8385d]" /> Fecha de nacimiento
               </label>
-              <input 
-                name="fechaNacimiento" 
-                type="date" 
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none" 
-                value={formData.fechaNacimiento} 
-                onChange={handleChange} 
+              <input
+                name="fechaNacimiento"
+                type="date"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none"
+                value={formData.fechaNacimiento}
+                onChange={handleChange}
               />
             </div>
 
@@ -310,47 +444,47 @@ export default function ProfilePage() {
               <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1.5">
                 <FileText className="w-4 h-4 text-[#e8385d]" /> Sobre mí
               </label>
-              <textarea 
-                name="bio" 
-                rows="3" 
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none resize-none" 
-                value={formData.bio} 
-                onChange={handleChange} 
+              <textarea
+                name="bio"
+                rows="3"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none resize-none"
+                value={formData.bio}
+                onChange={handleChange}
               />
             </div>
 
             {/* SECCIÓN DE SEGURIDAD: Cambio de Password */}
             <div className="pt-4 border-t border-slate-100">
-              <button 
-                type="button" 
-                onClick={() => setShowPasswordFields(!showPasswordFields)} 
+              <button
+                type="button"
+                onClick={() => setShowPasswordFields(!showPasswordFields)}
                 className="text-xs font-black text-[#e8385d] uppercase tracking-wider hover:underline"
               >
                 {showPasswordFields ? '− Cancelar cambio de contraseña' : '+ Cambiar contraseña'}
               </button>
-              
+
               {showPasswordFields && (
                 <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <input 
-                    type="password" 
-                    placeholder="Contraseña actual" 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" 
-                    value={passwords.currentPassword} 
-                    onChange={(e) => setPasswords({...passwords, currentPassword: e.target.value})} 
+                  <input
+                    type="password"
+                    placeholder="Contraseña actual"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm"
+                    value={passwords.currentPassword}
+                    onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
                   />
-                  <input 
-                    type="password" 
-                    placeholder="Nueva contraseña" 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" 
-                    value={passwords.newPassword} 
-                    onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})} 
+                  <input
+                    type="password"
+                    placeholder="Nueva contraseña"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm"
+                    value={passwords.newPassword}
+                    onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
                   />
-                  <input 
-                    type="password" 
-                    placeholder="Confirmar nueva contraseña" 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm" 
-                    value={passwords.confirmPassword} 
-                    onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})} 
+                  <input
+                    type="password"
+                    placeholder="Confirmar nueva contraseña"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-sm"
+                    value={passwords.confirmPassword}
+                    onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
                   />
                   {passwordError && (
                     <p className="text-[10px] font-bold text-[#e8385d] px-1 uppercase tracking-tight">
@@ -363,10 +497,10 @@ export default function ProfilePage() {
 
             {/* Botón de envío */}
             <div className="pt-6">
-              <button 
-                type="submit" 
-                disabled={loading} 
-                className="w-full py-4 rounded-xl font-black text-white text-sm shadow-xl transition-all active:scale-[0.98] disabled:opacity-70" 
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 rounded-xl font-black text-white text-sm shadow-xl transition-all active:scale-[0.98] disabled:opacity-70"
                 style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 100%)' }}
               >
                 {loading ? <Loader2 className="animate-spin mx-auto w-5 h-5" /> : 'Guardar cambios'}
@@ -389,7 +523,7 @@ export default function ProfilePage() {
                   Debes rellenar todos tus datos personales y añadir una foto de perfil para poder crear o unirte a un grupo.
                 </div>
               )}
-              
+
               {!grupoInfo ? (
                 <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-center">
                   <p className="text-sm text-slate-600 mb-4">
@@ -411,8 +545,8 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="mt-4 flex gap-2">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Ej: NX-A7F9"
                       value={codigoInput}
                       onChange={(e) => setCodigoInput(e.target.value.toUpperCase())}
@@ -445,13 +579,13 @@ export default function ProfilePage() {
                       {copySuccess ? <CheckCircle2 className="w-6 h-6 text-emerald-500" /> : <Copy className="w-6 h-6" />}
                     </button>
                   </div>
-                  
+
                   {miembrosGrupo.length > 0 && (
                     <div className="mt-4 p-4 bg-white rounded-xl border border-rose-100">
-                        <p className="text-sm font-semibold text-rose-700 flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Buscando piso junto a: {miembrosGrupo.join(', ')}
-                        </p>
+                      <p className="text-sm font-semibold text-rose-700 flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Buscando piso junto a: {miembrosGrupo.join(', ')}
+                      </p>
                     </div>
                   )}
 
@@ -477,6 +611,17 @@ export default function ProfilePage() {
 
         </div>
       </div>
+
+      {/* Modal de valoración */}
+      {showValoracionModal && destinoValoracion && (
+        <ValoracionModal
+          autorId={usuarioId}
+          destino={destinoValoracion}
+          onClose={() => setShowValoracionModal(false)}
+          onSuccess={() => cargarValoraciones(usuarioId)}
+        />
+      )}
+
     </div>
   );
 }
