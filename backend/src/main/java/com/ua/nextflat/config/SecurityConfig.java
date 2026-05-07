@@ -12,21 +12,24 @@ import org.springframework.security.config.Customizer;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/usuarios/**", "/api/pisos", "/api/pisos/**", "/api/feed/**",
-                                "/api/inmuebles/**","/api/matches/**", "/api/chats/**", "/api/propietario-feed/**", "/api/supervisor/**", "/error")
-                        .permitAll()
-                        .anyRequest().authenticated())
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
+                                .cors(Customizer.withDefaults())
+                                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(authz -> authz
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                .requestMatchers("/api/usuarios/**", "/api/pisos", "/api/pisos/**",
+                                                                "/api/feed/**",
+                                                                "/api/inmuebles/**", "/api/matches/**", "/api/chats/**",
+                                                                "/api/propietario-feed/**", "/api/supervisor/**",
+                                                                "/api/valoraciones/**", "/error")
+                                                .permitAll()
+                                                .anyRequest().authenticated())
 
-                .httpBasic(basic -> basic.disable())
-                .formLogin(form -> form.disable());
+                                .httpBasic(basic -> basic.disable())
+                                .formLogin(form -> form.disable());
 
-        return http.build();
-    }
+                return http.build();
+        }
 }
