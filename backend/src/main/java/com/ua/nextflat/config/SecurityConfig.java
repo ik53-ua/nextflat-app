@@ -21,7 +21,7 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                                 .requestMatchers("/api/usuarios/**", "/api/pisos", "/api/pisos/**",
                                                                 "/api/feed/**",
-                                                                "/api/inmuebles/**", "/api/matches/**", "/api/chats/**",
+                                                                "/api/inmuebles/**", "/api/matches/**", "/api/chats/**", "/api/citas/**",
                                                                 "/api/propietario-feed/**", "/api/supervisor/**",
                                                                 "/api/valoraciones/**", "/error")
                                                 .permitAll()

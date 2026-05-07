@@ -26,9 +26,16 @@ public class FeedController {
     public ResponseEntity<List<FeedInmuebleDTO>> getFeedForUser(
             @PathVariable Long usuarioId,
             @RequestParam(required = false) String municipio,
-            @RequestParam(required = false) Double precioMax) {
+            @RequestParam(required = false) java.math.BigDecimal precioMin,
+            @RequestParam(required = false) java.math.BigDecimal precioMax,
+            @RequestParam(required = false) Integer numHabitaciones,
+            @RequestParam(required = false) Integer numBanos,
+            @RequestParam(required = false) Boolean tieneAscensor,
+            @RequestParam(required = false) Boolean admiteMascotas,
+            @RequestParam(required = false) Boolean esCompartido) {
         // Le pasamos los nuevos filtros al servicio
-        List<FeedInmuebleDTO> feed = feedService.getFeedForUser(usuarioId, municipio, precioMax);
+        List<FeedInmuebleDTO> feed = feedService.getFeedForUser(usuarioId, municipio, precioMin, precioMax, 
+                numHabitaciones, numBanos, tieneAscensor, admiteMascotas, esCompartido);
         return ResponseEntity.ok(feed);
     }
 
@@ -59,8 +66,18 @@ public class FeedController {
     }
 
     @GetMapping("/public")
-    public ResponseEntity<List<FeedInmuebleDTO>> getPublicFeed() {
-        List<FeedInmuebleDTO> feed = feedService.getPublicFeed();
+    public ResponseEntity<List<FeedInmuebleDTO>> getPublicFeed(
+            @RequestParam(required = false) String municipio,
+            @RequestParam(required = false) java.math.BigDecimal precioMin,
+            @RequestParam(required = false) java.math.BigDecimal precioMax,
+            @RequestParam(required = false) Integer numHabitaciones,
+            @RequestParam(required = false) Integer numBanos,
+            @RequestParam(required = false) Boolean tieneAscensor,
+            @RequestParam(required = false) Boolean admiteMascotas,
+            @RequestParam(required = false) Boolean esCompartido) {
+        // Si no hay usuarioId, pasamos null. El servicio/repo lo manejará.
+        List<FeedInmuebleDTO> feed = feedService.getFeedForUser(null, municipio, precioMin, precioMax, 
+                numHabitaciones, numBanos, tieneAscensor, admiteMascotas, esCompartido);
         return ResponseEntity.ok(feed);
     }
 }
