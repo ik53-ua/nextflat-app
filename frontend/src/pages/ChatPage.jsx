@@ -1,17 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Eye } from 'lucide-react';
+import { ArrowLeft, Send, Eye, Calendar as CalendarIcon, MapPin } from 'lucide-react';
+import AgendarCitaModal from '../components/ui/AgendarCitaModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export default function ChatPage() {
   const { matchId } = useParams();
   const navigate = useNavigate();
+  const [chat, setChat] = useState(null);
   const [chatId, setChatId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [contacto, setContacto] = useState(null); // {id, nombre, imagen}
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Get current user
@@ -26,38 +29,40 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages.length]);
 
+  const fetchChatAndMessages = async () => {
+    try {
+      const chatRes = await fetch(`${API_URL}/api/chats/match/${matchId}`);
+      if (!chatRes.ok) throw new Error('Chat no encontrado');
+      const chatData = await chatRes.json();
+      setChat(chatData);
+      setChatId(chatData.id);
+
+      // Cargar el match para obtener datos del contacto
+      const matchesRes = await fetch(`${API_URL}/api/matches/${currentUserId}`);
+      if (matchesRes.ok) {
+        const matchesData = await matchesRes.json();
+        const thisMatch = matchesData.find(m => m.matchId === Number(matchId));
+        if (thisMatch) {
+          setContacto({
+            id: thisMatch.contactoId,
+            nombre: thisMatch.nombreContacto,
+            imagen: thisMatch.imagenContacto,
+          });
+        }
+      }
+
+      const msgRes = await fetch(`${API_URL}/api/chats/${chatData.id}/mensajes`);
+      const msgData = await msgRes.json();
+      setMessages(msgData);
+    } catch (error) {
+      console.error('Error fetching chat:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load chat and initial messages
   useEffect(() => {
-    const fetchChatAndMessages = async () => {
-      try {
-        const chatRes = await fetch(`${API_URL}/api/chats/match/${matchId}`);
-        if (!chatRes.ok) throw new Error('Chat no encontrado');
-        const chatData = await chatRes.json();
-        setChatId(chatData.id);
-
-        // Cargar el match para obtener datos del contacto
-        const matchesRes = await fetch(`${API_URL}/api/matches/${currentUserId}`);
-        if (matchesRes.ok) {
-          const matchesData = await matchesRes.json();
-          const thisMatch = matchesData.find(m => m.matchId === Number(matchId));
-          if (thisMatch) {
-            setContacto({
-              id: thisMatch.contactoId,
-              nombre: thisMatch.nombreContacto,
-              imagen: thisMatch.imagenContacto,
-            });
-          }
-        }
-
-        const msgRes = await fetch(`${API_URL}/api/chats/${chatData.id}/mensajes`);
-        const msgData = await msgRes.json();
-        setMessages(msgData);
-      } catch (error) {
-        console.error('Error fetching chat:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchChatAndMessages();
   }, [matchId]);
 
@@ -110,6 +115,48 @@ export default function ChatPage() {
     }
   };
 
+  const handleAgendarSubmit = async (citaData) => {
+    try {
+      if (!contacto || !contacto.id) {
+        alert('Cargando datos del contacto, inténtalo de nuevo.');
+        return;
+      }
+      const isPropietario = currentUser.rol === 'PROPIETARIO';
+      const propietarioId = isPropietario ? currentUserId : contacto.id;
+      const inquilinoId = isPropietario ? contacto.id : currentUserId;
+
+      const res = await fetch(`${API_URL}/api/citas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propietarioId: propietarioId,
+          inquilinoId: inquilinoId,
+          inmuebleId: null, // No disponemos del inmuebleId exacto en esta vista
+          ...citaData
+        })
+      });
+
+      if (res.ok) {
+        await fetch(`${API_URL}/api/chats/${chatId}/mensajes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            emisorId: currentUserId,
+            contenido: `🗓️ He propuesto una visita para el ${citaData.fechaHora.replace('T', ' a las ')}. Motivo: ${citaData.motivo}`
+          })
+        });
+        fetchChatAndMessages();
+        setIsModalOpen(false);
+        alert('Cita solicitada correctamente.');
+      } else {
+        alert('Error al solicitar la cita.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -138,27 +185,35 @@ export default function ChatPage() {
               En línea
             </span>
           </div>
-          {/* Avatar del contacto — clic abre el perfil */}
-          <button
-            onClick={() => contacto?.id && navigate(`/candidato/${contacto.id}`, { state: { readOnly: true } })}
-            className="relative group focus:outline-none"
-            title="Ver perfil"
-          >
-            {contacto?.imagen ? (
-              <img
-                src={contacto.imagen}
-                alt={contacto.nombre}
-                className="w-10 h-10 rounded-full object-cover shadow-md transition-opacity group-hover:opacity-75"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#e8385d] to-[#ff7b93] flex items-center justify-center shadow-md text-white font-bold">
-                {contacto?.nombre?.charAt(0)?.toUpperCase() || 'NF'}
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="p-2 text-[#e8385d] hover:bg-rose-50 rounded-full transition-colors"
+              title="Agendar visita"
+            >
+              <CalendarIcon size={20} />
+            </button>
+            <button
+              onClick={() => contacto?.id && navigate(`/candidato/${contacto.id}`, { state: { readOnly: true } })}
+              className="relative group focus:outline-none"
+              title="Ver perfil"
+            >
+              {contacto?.imagen ? (
+                <img
+                  src={contacto.imagen}
+                  alt={contacto.nombre}
+                  className="w-10 h-10 rounded-full object-cover shadow-md transition-opacity group-hover:opacity-75"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#e8385d] to-[#ff7b93] flex items-center justify-center shadow-md text-white font-bold">
+                  {contacto?.nombre?.charAt(0)?.toUpperCase() || 'NF'}
+                </div>
+              )}
+              <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                <Eye className="w-4 h-4 text-white" />
               </div>
-            )}
-            <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-              <Eye className="w-4 h-4 text-white" />
-            </div>
-          </button>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -179,7 +234,6 @@ export default function ChatPage() {
         ) : (
           messages.map((msg, idx) => {
             const isMe = msg.emisorId === currentUserId;
-            // Simple animation for new messages
             const isNew = idx === messages.length - 1;
             return (
               <div
@@ -239,6 +293,13 @@ export default function ChatPage() {
           animation: fade-in-up 0.3s ease-out forwards;
         }
       `}</style>
+      
+      <AgendarCitaModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSubmit={handleAgendarSubmit} 
+        inmuebleId={chat?.inmuebleId}
+      />
     </div>
   );
 }

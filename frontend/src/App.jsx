@@ -14,6 +14,7 @@ import EditarInmueble from './pages/EditarInmueble';
 import AltaInmueble from './pages/AltaInmueble';
 import SupervisorPage from './pages/SupervisorPage';
 import ChatPage from './pages/ChatPage';
+import CalendarPage from './pages/CalendarPage';
 import './App.css';
 
 // Redirect raíz según rol del usuario logueado
@@ -83,6 +84,7 @@ function App() {
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/chat/:matchId" element={<ChatPage />} />
+          <Route path="/calendario" element={<CalendarPage />} />
 
           {/* Tu ruta integrada en el nuevo sistema */}
           <Route path="/mis-inmuebles" element={<MisInmuebles />} />

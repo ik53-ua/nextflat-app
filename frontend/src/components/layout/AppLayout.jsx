@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home, MessageCircle, SlidersHorizontal, Users, Building2, BadgeCheck, AlertCircle } from 'lucide-react';
+import { Home, MessageCircle, SlidersHorizontal, Users, Building2, BadgeCheck, AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
 
 // Profile Avatar
 function ProfileAvatar({ user }) {
@@ -154,11 +154,13 @@ export default function AppLayout({ children }) {
                         { to: '/owner-feed',    label: 'Candidatos', Icon: Users },
                         { to: '/mis-inmuebles', label: 'Mis Pisos',  Icon: Building2 },
                         { to: '/matches',       label: 'Matches',    Icon: MessageCircle },
+                        { to: '/calendario',    label: 'Agenda',     Icon: CalendarIcon },
                     ]
                     : [
                         { to: '/filtros', label: 'Filtros',   Icon: SlidersHorizontal },
                         { to: '/feed',    label: 'Descubrir', Icon: Home },
                         { to: '/matches', label: 'Matches',   Icon: MessageCircle },
+                        { to: '/calendario', label: 'Agenda', Icon: CalendarIcon },
                     ];
                 return (
                     <nav className="flex bg-white border-t border-slate-200 z-20 safe-area-bottom">
