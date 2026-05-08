@@ -50,7 +50,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final InmuebleRepository inmuebleRepository;
     private final FotoInmuebleRepository fotoInmuebleRepository;
     private final GrupoBusquedaRepository grupoBusquedaRepository;
-    private final InteraccionRepository interaccionRepository; // NUEVO
+    private final InteraccionRepository interaccionRepository;
 
     public DatabaseSeeder(UsuarioRepository usuarioRepository,
                           InmuebleRepository inmuebleRepository,
