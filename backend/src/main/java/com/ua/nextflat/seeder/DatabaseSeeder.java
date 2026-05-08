@@ -3,11 +3,14 @@ package com.ua.nextflat.seeder;
 import com.ua.nextflat.model.FotoInmueble;
 import com.ua.nextflat.model.GrupoBusqueda;
 import com.ua.nextflat.model.Inmueble;
+import com.ua.nextflat.model.Interaccion;
 import com.ua.nextflat.model.Usuario;
 import com.ua.nextflat.model.enums.RolUsuario;
+import com.ua.nextflat.model.enums.TipoInteraccion;
 import com.ua.nextflat.repository.FotoInmuebleRepository;
 import com.ua.nextflat.repository.GrupoBusquedaRepository;
 import com.ua.nextflat.repository.InmuebleRepository;
+import com.ua.nextflat.repository.InteraccionRepository;
 import com.ua.nextflat.repository.UsuarioRepository;
 import net.datafaker.Faker;
 import org.springframework.boot.CommandLineRunner;
@@ -26,36 +29,39 @@ import java.util.Map;
 public class DatabaseSeeder implements CommandLineRunner {
 
     private static final String[] FOTO_URLS = {
-    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1588854337115-1c67d9247e4d?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1585128792020-803d29415281?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1617104678098-de229db51175?w=1920&auto=format&fit=crop&q=80", 
-    "https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1588854337115-1c67d9247e4d?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1585128792020-803d29415281?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1617104678098-de229db51175?w=1920&auto=format&fit=crop&q=80", 
+        "https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=1920&auto=format&fit=crop&q=80", 
     };
 
     private final UsuarioRepository usuarioRepository;
     private final InmuebleRepository inmuebleRepository;
     private final FotoInmuebleRepository fotoInmuebleRepository;
     private final GrupoBusquedaRepository grupoBusquedaRepository;
+    private final InteraccionRepository interaccionRepository; // NUEVO
 
     public DatabaseSeeder(UsuarioRepository usuarioRepository,
                           InmuebleRepository inmuebleRepository,
                           FotoInmuebleRepository fotoInmuebleRepository,
-                          GrupoBusquedaRepository grupoBusquedaRepository) {
+                          GrupoBusquedaRepository grupoBusquedaRepository,
+                          InteraccionRepository interaccionRepository) {
         this.usuarioRepository = usuarioRepository;
         this.inmuebleRepository = inmuebleRepository;
         this.fotoInmuebleRepository = fotoInmuebleRepository;
         this.grupoBusquedaRepository = grupoBusquedaRepository;
+        this.interaccionRepository = interaccionRepository;
     }
 
     @Override
@@ -71,69 +77,73 @@ public class DatabaseSeeder implements CommandLineRunner {
             supervisor.setBio("Administrador del sistema NextFlat.");
             supervisor.setEstadoVerificacion(com.ua.nextflat.model.enums.EstadoVerificacion.VERIFICADO);
             usuarioRepository.save(supervisor);
-            System.out.println("✅ Cuenta de Supervisor (admin@nextflat.com) generada con éxito.");
+            System.out.println("✅ Cuenta de Supervisor generada.");
         }
 
         if (usuarioRepository.count() <= 1) {
-            System.out.println("🌱 Base de datos vacía. Iniciando Seeder optimizado con saveAll...");
+            System.out.println("🌱 Iniciando Seeder con fotos de alta resolución y Likes automáticos...");
 
             Faker faker = new Faker(new Locale("es", "ES"));
 
             Map<String, String[]> callesPorMunicipio = new HashMap<>();
-            callesPorMunicipio.put("San Vicente del Raspeig", new String[]{"Calle Mayor", "Avenida de la Universidad", "Calle Alicante", "Avenida Ancha de Castelar", "Calle Pintor Picasso"});
-            callesPorMunicipio.put("Alicante", new String[]{"Explanada de España", "Avenida Maisonnave", "Calle Castaños", "Avenida de Alfonso X El Sabio", "Calle San Francisco"});
-            callesPorMunicipio.put("Valencia", new String[]{"Calle Colón", "Avenida del Cid", "Calle de la Paz", "Gran Vía del Marqués del Turia", "Calle Ruzafa"});
-            callesPorMunicipio.put("Madrid", new String[]{"Gran Vía", "Calle de Alcalá", "Paseo de la Castellana", "Calle Fuencarral", "Calle Goya"});
-            callesPorMunicipio.put("Barcelona", new String[]{"Passeig de Gràcia", "Las Ramblas", "Avenida Diagonal", "Carrer de Balmes", "Carrer d'Aragó"});
+            callesPorMunicipio.put("San Vicente del Raspeig", new String[]{"Calle Mayor", "Avenida de la Universidad"});
+            callesPorMunicipio.put("Alicante", new String[]{"Explanada de España", "Avenida Maisonnave"});
+            callesPorMunicipio.put("Valencia", new String[]{"Calle Colón", "Avenida del Cid"});
+            callesPorMunicipio.put("Madrid", new String[]{"Gran Vía", "Calle de Alcalá"});
+            callesPorMunicipio.put("Barcelona", new String[]{"Passeig de Gràcia", "Las Ramblas"});
 
             String[] descripciones = {
-                "Precioso piso muy luminoso, recién reformado y listo para entrar a vivir. Cuenta con un amplio salón y un balcón exterior perfecto para relajarse.",
-                "Apartamento acogedor en pleno centro. Ideal para estudiantes o parejas. Totalmente amueblado y equipado con electrodomésticos de última generación.",
-                "Magnífica vivienda con excelentes vistas. Zona muy tranquila, estupendamente comunicada con el transporte público y rodeada de comercios y supermercados.",
-                "Piso amplio y exterior. Dispone de aire acondicionado frío/calor, calefacción central y grandes armarios empotrados en todas las habitaciones.",
-                "Espectacular loft de diseño moderno. Cocina americana abierta al salón, acabados de primera calidad, suelo de tarima y muchísima luz natural."
+                "Precioso piso muy luminoso, recién reformado y listo para entrar a vivir.",
+                "Apartamento acogedor en pleno centro. Ideal para estudiantes o parejas.",
+                "Magnífica vivienda con excelentes vistas. Zona muy tranquila."
             };
 
-            // --- CREACIÓN DE GRUPOS PARA LA US 014 ---
-            System.out.println("👥 Generando grupos de búsqueda de prueba...");
+            // --- GRUPOS PARA US 014 ---
             GrupoBusqueda grupoPareja = new GrupoBusqueda();
             grupoBusquedaRepository.save(grupoPareja);
 
             GrupoBusqueda grupoAmigos = new GrupoBusqueda();
             grupoBusquedaRepository.save(grupoAmigos);
-            // ------------------------------------------
 
             List<Usuario> usuariosALista = new ArrayList<>();
-            List<Inmueble> inmueblesALista = new ArrayList<>();
-            List<FotoInmueble> fotosALista = new ArrayList<>();
 
-            // 1. Generar 30 Inquilinos
+            // 1. Generar Inquilinos
             for (int i = 1; i <= 30; i++) {
                 Usuario inquilino = new Usuario();
                 inquilino.setNombre(faker.name().fullName());
                 inquilino.setEmail("inquilino" + i + "@nextflat.com");
                 inquilino.setPassword("password123");
                 inquilino.setRol(RolUsuario.INQUILINO);
-                inquilino.setProfesion(faker.company().profession());
-                inquilino.setBio("Hola, soy " + inquilino.getNombre() + ". Busco un piso compartido por la zona.");
                 inquilino.setEstadoVerificacion(com.ua.nextflat.model.enums.EstadoVerificacion.VERIFICADO);
                 inquilino.setFechaNacimiento(LocalDate.now().minusYears(faker.number().numberBetween(18, 35)));
-                inquilino.setFotoPerfil("https://randomuser.me/api/portraits/" + (i % 2 == 0 ? "men" : "women") + "/" + i + ".jpg");
 
-                // --- ASIGNAR GRUPOS A LOS PRIMEROS 4 INQUILINOS ---
-                if (i == 1 || i == 2) {
+                if (i == 1) {
+                    inquilino.setNombre("Laura Sánchez");
+                    inquilino.setFotoPerfil("https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80");
                     inquilino.setGrupo(grupoPareja);
-                    inquilino.setBio("Somos pareja y buscamos nuestro primer nido juntos. Somos muy tranquilos.");
-                } else if (i == 3 || i == 4) {
+                    inquilino.setBio("Somos pareja y buscamos nuestro primer nido juntos.");
+                } else if (i == 2) {
+                    inquilino.setNombre("Carlos Ruiz");
+                    inquilino.setFotoPerfil("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=800&auto=format&fit=crop&q=80");
+                    inquilino.setGrupo(grupoPareja);
+                } else if (i == 3) {
+                    inquilino.setNombre("Mario García");
+                    inquilino.setFotoPerfil("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80");
                     inquilino.setGrupo(grupoAmigos);
-                    inquilino.setBio("Somos dos amigos estudiantes buscando compartir gastos cerca de la uni.");
+                    inquilino.setBio("Somos dos amigos estudiantes buscando compartir gastos.");
+                } else if (i == 4) {
+                    inquilino.setNombre("Elena Martínez");
+                    inquilino.setFotoPerfil("https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&auto=format&fit=crop&q=80");
+                    inquilino.setGrupo(grupoAmigos);
+                } else {
+                    inquilino.setFotoPerfil("https://randomuser.me/api/portraits/" + (i % 2 == 0 ? "men" : "women") + "/" + i + ".jpg");
+                    inquilino.setBio("Hola, soy " + inquilino.getNombre() + ". Busco un piso compartido.");
                 }
-                // --------------------------------------------------
 
                 usuariosALista.add(inquilino);
             }
 
-            // 2. Generar 25 Propietarios (5 por ciudad)
+            // 2. Generar Propietarios
             String[] municipios = {"San Vicente del Raspeig", "Alicante", "Valencia", "Madrid", "Barcelona"};
             int cuentaPropietario = 1;
             for (int i = 0; i < municipios.length; i++) {
@@ -151,7 +161,8 @@ public class DatabaseSeeder implements CommandLineRunner {
 
             usuarioRepository.saveAll(usuariosALista);
 
-            // 3. Generar 50 Inmuebles (2 por propietario)
+            // 3. Generar Inmuebles
+            List<Inmueble> inmueblesALista = new ArrayList<>();
             int indexMunicipio = 0;
             int contadorPisosEnCiudad = 0;
 
@@ -159,7 +170,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                 if (u.getRol() == RolUsuario.PROPIETARIO) {
                     String municipioActual = municipios[indexMunicipio];
                     String[] calles = callesPorMunicipio.get(municipioActual);
-
                     for (int j = 0; j < 2; j++) {
                         Inmueble inm = new Inmueble();
                         inm.setPropietario(u);
@@ -172,7 +182,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                         inm.setActivo(true);
                         inmueblesALista.add(inm);
                     }
-
                     contadorPisosEnCiudad++;
                     if (contadorPisosEnCiudad == 5) {
                         indexMunicipio++;
@@ -180,10 +189,10 @@ public class DatabaseSeeder implements CommandLineRunner {
                     }
                 }
             }
-
             inmuebleRepository.saveAll(inmueblesALista);
 
-            // 4. Generar 150 Fotos (3 por inmueble) con más variedad
+            // 4. Generar Fotos de Inmuebles
+            List<FotoInmueble> fotosALista = new ArrayList<>();
             int inmuebleIndex = 0;
             for (Inmueble inmGuardado : inmueblesALista) {
                 for (int k = 0; k < 3; k++) {
@@ -195,10 +204,35 @@ public class DatabaseSeeder implements CommandLineRunner {
                 }
                 inmuebleIndex++;
             }
-
             fotoInmuebleRepository.saveAll(fotosALista);
 
-            System.out.println("✅ ¡ÉXITO! Se han insertado 50 inmuebles, 150 fotos y los grupos de prueba correctamente.");
+            // --- 5. EL TRUCO MÁGICO: GENERAR LIKES AUTOMÁTICOS ---
+            System.out.println("❤️ Generando Likes automáticos para que salgan en el feed...");
+            
+            // Buscar a Laura, a Mario y al Propietario 1
+            Usuario laura = usuariosALista.stream().filter(u -> u.getEmail().equals("inquilino1@nextflat.com")).findFirst().orElse(null);
+            Usuario mario = usuariosALista.stream().filter(u -> u.getEmail().equals("inquilino3@nextflat.com")).findFirst().orElse(null);
+            Inmueble pisoProp1 = inmueblesALista.stream().filter(i -> i.getPropietario().getEmail().equals("propietario1@nextflat.com")).findFirst().orElse(null);
+
+            if (laura != null && mario != null && pisoProp1 != null) {
+                // Laura (del Grupo 1) le da Like al piso del Propietario 1
+                Interaccion likeLaura = new Interaccion();
+                likeLaura.setUsuarioOrigen(laura);
+                likeLaura.setUsuarioTarget(pisoProp1.getPropietario());
+                likeLaura.setInmuebleDestino(pisoProp1);
+                likeLaura.setTipo(TipoInteraccion.LIKE);
+                interaccionRepository.save(likeLaura);
+
+                // Mario (del Grupo 2) también le da Like al piso del Propietario 1
+                Interaccion likeMario = new Interaccion();
+                likeMario.setUsuarioOrigen(mario);
+                likeMario.setUsuarioTarget(pisoProp1.getPropietario());
+                likeMario.setInmuebleDestino(pisoProp1);
+                likeMario.setTipo(TipoInteraccion.LIKE);
+                interaccionRepository.save(likeMario);
+            }
+
+            System.out.println("✅ Seeder completado. ¡Entra como propietario1@nextflat.com y verás la magia!");
         }
     }
 }

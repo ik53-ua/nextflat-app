@@ -28,52 +28,20 @@ export default function OwnerFeed() {
     }
   }, []);
 
-  // const fetchCandidatos = async () => {
-  //   if (!userId || userRol !== "PROPIETARIO") return;
-  //   setLoading(true);
-  //   try {
-  //     const data = await getCandidatosParaPropietario(userId);
-  //     setCandidatos(Array.isArray(data) ? data : []);
-  //   } catch (error) {
-  //     console.error("Error fetching candidatos:", error);
-  //     setCandidatos([]);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  const fetchCandidatos = async () => {
-    if (!userId || userRol !== "PROPIETARIO") return;
-    setLoading(true);
-    try {
-      const data = await getCandidatosParaPropietario(userId);
-      let listaCandidatos = Array.isArray(data) ? data : [];
+   const fetchCandidatos = async () => {
+     if (!userId || userRol !== "PROPIETARIO") return;
+     setLoading(true);
+     try {
+       const data = await getCandidatosParaPropietario(userId);
+       setCandidatos(Array.isArray(data) ? data : []);
+     } catch (error) {
+       console.error("Error fetching candidatos:", error);
+       setCandidatos([]);
+     } finally {
+       setLoading(false);
+     }
+   };
 
-      // ==========================================
-      // MOCK DATA PARA PROBAR US-014 (BORRAR DESPUÉS)
-      // ==========================================
-      const mockGrupo = {
-        id: 9999, // ID inventado para que React no se queje
-        esGrupo: true,
-        bio: "Somos muy tranquilos, no hacemos fiestas y buscamos algo a largo plazo. Nos encantan los animales.",
-        interesadoEnDireccion: "Calle de Prueba, 123",
-        usuarios: [
-          { nombre: "Laura Sánchez", edad: 25, fotoPerfil: "https://randomuser.me/api/portraits/women/44.jpg" },
-          { nombre: "Carlos Ruiz", edad: 27, fotoPerfil: "https://randomuser.me/api/portraits/men/46.jpg" }
-        ]
-      };
-      
-      // Metemos la tarjeta doble de prueba para que sea la primera que veas
-      listaCandidatos = [...listaCandidatos, mockGrupo];
-      // ==========================================
-
-      setCandidatos(listaCandidatos);
-    } catch (error) {
-      console.error("Error fetching candidatos:", error);
-      setCandidatos([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (userRol === "PROPIETARIO") {
