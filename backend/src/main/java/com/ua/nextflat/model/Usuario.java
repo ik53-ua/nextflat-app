@@ -1,5 +1,6 @@
 package com.ua.nextflat.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ua.nextflat.model.enums.EstadoVerificacion;
 import com.ua.nextflat.model.enums.RolUsuario;
 import jakarta.persistence.*;
@@ -7,6 +8,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Data
 @Entity
@@ -46,6 +48,7 @@ public class Usuario {
 
     @ManyToOne
     @JoinColumn(name = "grupo_id")
+    @JsonIgnoreProperties("usuarios")
     private GrupoBusqueda grupo;
 
     @CreationTimestamp
