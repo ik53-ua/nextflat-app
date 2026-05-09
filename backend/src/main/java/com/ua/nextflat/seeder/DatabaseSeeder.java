@@ -27,6 +27,17 @@ import java.util.Map;
 
 @Component
 public class DatabaseSeeder implements CommandLineRunner {
+    private static final String[] FOTOS_PERSONAS = {
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80", // Mujer
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80", // Hombre
+        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&auto=format&fit=crop&q=80", // Mujer
+        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80", // Hombre
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&auto=format&fit=crop&q=80", // Mujer
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&auto=format&fit=crop&q=80", // Hombre
+        "https://images.unsplash.com/photo-1554151228-14d9def656e4?w=800&auto=format&fit=crop&q=80", // Mujer
+        "https://images.unsplash.com/photo-1491349174775-aaafddd81942?w=800&auto=format&fit=crop&q=80", // Mujer
+        "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&auto=format&fit=crop&q=80"  // Hombre
+    };
 
     private static final String[] FOTO_URLS = {
         "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1920&auto=format&fit=crop&q=80", 
@@ -115,7 +126,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 inquilino.setPassword("password123");
                 inquilino.setRol(RolUsuario.INQUILINO);
                 inquilino.setEstadoVerificacion(com.ua.nextflat.model.enums.EstadoVerificacion.VERIFICADO);
-                inquilino.setFechaNacimiento(LocalDate.now().minusYears(faker.number().numberBetween(18, 35)));
+                inquilino.setFechaNacimiento(LocalDate.now().minusYears(faker.number().numberBetween(18, 50)));
 
                 if (i == 1) {
                     inquilino.setNombre("Laura Sánchez");
@@ -136,8 +147,9 @@ public class DatabaseSeeder implements CommandLineRunner {
                     inquilino.setFotoPerfil("https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&auto=format&fit=crop&q=80");
                     inquilino.setGrupo(grupoAmigos);
                 } else {
-                    inquilino.setFotoPerfil("https://randomuser.me/api/portraits/" + (i % 2 == 0 ? "men" : "women") + "/" + i + ".jpg");
-                    inquilino.setBio("Hola, soy " + inquilino.getNombre() + ". Busco un piso compartido.");
+                    int personaUrlIndex = (i) % FOTOS_PERSONAS.length;
+                    inquilino.setFotoPerfil(FOTOS_PERSONAS[personaUrlIndex]);
+                    inquilino.setBio("Hola, soy " + inquilino.getNombre() + ". Busco un piso compartido por la zona.");
                 }
 
                 usuariosALista.add(inquilino);
@@ -209,30 +221,48 @@ public class DatabaseSeeder implements CommandLineRunner {
             // --- 5. EL TRUCO MÁGICO: GENERAR LIKES AUTOMÁTICOS ---
             System.out.println("❤️ Generando Likes automáticos para que salgan en el feed...");
             
-            // Buscar a Laura, a Mario y al Propietario 1
+            // Buscar al Propietario 1 y a los líderes de los grupos
             Usuario laura = usuariosALista.stream().filter(u -> u.getEmail().equals("inquilino1@nextflat.com")).findFirst().orElse(null);
             Usuario mario = usuariosALista.stream().filter(u -> u.getEmail().equals("inquilino3@nextflat.com")).findFirst().orElse(null);
             Inmueble pisoProp1 = inmueblesALista.stream().filter(i -> i.getPropietario().getEmail().equals("propietario1@nextflat.com")).findFirst().orElse(null);
 
-            if (laura != null && mario != null && pisoProp1 != null) {
-                // Laura (del Grupo 1) le da Like al piso del Propietario 1
-                Interaccion likeLaura = new Interaccion();
-                likeLaura.setUsuarioOrigen(laura);
-                likeLaura.setUsuarioTarget(pisoProp1.getPropietario());
-                likeLaura.setInmuebleDestino(pisoProp1);
-                likeLaura.setTipo(TipoInteraccion.LIKE);
-                interaccionRepository.save(likeLaura);
+            if (pisoProp1 != null) {
+                // 1. Likes de los 2 GRUPOS
+                if (laura != null) {
+                    Interaccion likeLaura = new Interaccion();
+                    likeLaura.setUsuarioOrigen(laura);
+                    likeLaura.setUsuarioTarget(pisoProp1.getPropietario());
+                    likeLaura.setInmuebleDestino(pisoProp1);
+                    likeLaura.setTipo(TipoInteraccion.LIKE);
+                    interaccionRepository.save(likeLaura);
+                }
 
-                // Mario (del Grupo 2) también le da Like al piso del Propietario 1
-                Interaccion likeMario = new Interaccion();
-                likeMario.setUsuarioOrigen(mario);
-                likeMario.setUsuarioTarget(pisoProp1.getPropietario());
-                likeMario.setInmuebleDestino(pisoProp1);
-                likeMario.setTipo(TipoInteraccion.LIKE);
-                interaccionRepository.save(likeMario);
+                if (mario != null) {
+                    Interaccion likeMario = new Interaccion();
+                    likeMario.setUsuarioOrigen(mario);
+                    likeMario.setUsuarioTarget(pisoProp1.getPropietario());
+                    likeMario.setInmuebleDestino(pisoProp1);
+                    likeMario.setTipo(TipoInteraccion.LIKE);
+                    interaccionRepository.save(likeMario);
+                }
+
+                // 2. Likes de 3 INDIVIDUOS (inquilinos 5, 6 y 7)
+                for (int i = 5; i <= 7; i++) {
+                    String email = "inquilino" + i + "@nextflat.com";
+                    Usuario individual = usuariosALista.stream().filter(u -> u.getEmail().equals(email)).findFirst().orElse(null);
+                    
+                    if (individual != null) {
+                        Interaccion likeIndividual = new Interaccion();
+                        likeIndividual.setUsuarioOrigen(individual);
+                        likeIndividual.setUsuarioTarget(pisoProp1.getPropietario());
+                        likeIndividual.setInmuebleDestino(pisoProp1);
+                        likeIndividual.setTipo(TipoInteraccion.LIKE);
+                        interaccionRepository.save(likeIndividual);
+                    }
+                }
             }
 
-            System.out.println("✅ Seeder completado. ¡Entra como propietario1@nextflat.com y verás la magia!");
+            System.out.println("✅ Seeder completado. ¡Propietario 1 ahora tiene 2 grupos y 3 individuos en su feed!");
         }
     }
 }

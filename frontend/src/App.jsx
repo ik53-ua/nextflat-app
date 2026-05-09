@@ -15,6 +15,7 @@ import AltaInmueble from './pages/AltaInmueble';
 import SupervisorPage from './pages/SupervisorPage';
 import ChatPage from './pages/ChatPage';
 import './App.css';
+import GrupoDetails from './pages/GrupoDetails';
 
 // Redirect raíz según rol del usuario logueado
 function RootRedirect() {
@@ -95,6 +96,7 @@ function App() {
           } />
 
           <Route path="/" element={<RootRedirect />} />
+          <Route path="/grupo/:id" element={<GrupoDetails />} />
         </Routes>
       </AppLayout>
     </Router>

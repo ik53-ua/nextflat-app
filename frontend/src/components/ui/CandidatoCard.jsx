@@ -46,7 +46,10 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
     const handleClick = () => {
         if (hoverState === 'left' && onDislike) onDislike(item);
         if (hoverState === 'right' && onLike) onLike(item);
-        if (hoverState === 'center') navigate(esGrupo ? `/grupo/${item.id}` : `/candidato/${item.id}`);
+        // MODIFICADO: Enviamos los datos en la mochila (state)
+        if (hoverState === 'center') {
+            navigate(esGrupo ? `/grupo/${item.id}` : `/candidato/${item.id}`, { state: { datos: item } });
+        }
     };
 
     // Función auxiliar para avatares (fallback)
@@ -140,42 +143,62 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
             >
                 {esGrupo ? (
                     // ==========================================
-                    // LAYOUT GRUPO (2x1) - US 014
+                    // LAYOUT GRUPO (NUEVO: DISEÑO "CARTAS SUPERPUESTAS")
                     // ==========================================
                     <div className="flex flex-col w-full h-full relative" style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)' }}>
-                        {/* 40% Superior: Fotos Divididas Verticalmente */}
-                        <div className="flex h-[40%] w-full">
-                            <div className="w-1/2 h-full bg-cover bg-center border-r-[3px] border-white/30 relative" style={{ backgroundImage: `url(${getAvatarUrl(item.usuarios[0].fotoPerfil, item.usuarios[0].nombre)})` }}>
-                                <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded-md text-white text-xs font-bold shadow-sm">
-                                    {item.usuarios[0].nombre.split(' ')[0]}
+                        
+                        {/* 45% Superior: Cartas Superpuestas Dinámicas */}
+                        <div className="flex items-center justify-center h-[50%] w-full relative pt-12 px-4">
+                            <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]" />
+                            
+                            {/* Contenedor principal de las cartas */}
+                            <div className="relative w-full h-full flex justify-center items-center z-10 gap-2">
+                                {/* FOTO USUARIO 1 (Tipo Carta con ratio 1:1 encuadrado) */}
+                                <div className="w-[45%] aspect-[1/1] overflow-hidden rounded-2xl border-[5px] border-white shadow-[0_15px_30px_rgba(0,0,0,0.3)] relative group transition-transform hover:z-30 hover:scale-105">
+                                    <img 
+                                        src={getAvatarUrl(item.usuarios[0].fotoPerfil, item.usuarios[0].nombre)} 
+                                        alt={item.usuarios[0].nombre}
+                                        // MODIFICADO: object-top para encuadrar la cara
+                                        className="w-full h-full object-cover object-top"
+                                    />
+                                    <div className="absolute bottom-2 left-2 bg-black/60 px-2.5 py-1 rounded-md text-white text-[10px] font-black shadow-sm">
+                                        {item.usuarios[0].nombre.split(' ')[0]}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="w-1/2 h-full bg-cover bg-center relative" style={{ backgroundImage: `url(${getAvatarUrl(item.usuarios[1].fotoPerfil, item.usuarios[1].nombre)})` }}>
-                                 <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded-md text-white text-xs font-bold shadow-sm">
-                                    {item.usuarios[1].nombre.split(' ')[0]}
+                                
+                                {/* FOTO USUARIO 2 (Tipo Carta) */}
+                                <div className="w-[45%] aspect-[1/1] overflow-hidden rounded-2xl border-[5px] border-white shadow-[0_15px_30px_rgba(0,0,0,0.3)] relative transition-transform hover:z-30 hover:scale-105 -ml-6 z-20">
+                                    <img 
+                                        src={getAvatarUrl(item.usuarios[1].fotoPerfil, item.usuarios[1].nombre)} 
+                                        alt={item.usuarios[1].nombre}
+                                        className="w-full h-full object-cover object-top"
+                                    />
+                                     <div className="absolute bottom-2 left-2 bg-black/60 px-2.5 py-1 rounded-md text-white text-[10px] font-black shadow-sm">
+                                        {item.usuarios[1].nombre.split(' ')[0]}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* 60% Inferior: Información Combinada */}
-                        <div className="flex-1 flex flex-col p-5 sm:p-8 relative">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold text-[#e8385d] mb-3 shadow-sm w-fit bg-white">
+                        {/* 55% Inferior: Información Combinada */}
+                        <div className="flex-1 flex flex-col p-5 sm:p-8 relative z-20">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold text-[#e8385d] mb-4 shadow-sm w-fit bg-white">
                                 <Users className="w-3 h-3 flex-shrink-0" />
-                                <span>Grupo de Inquilinos</span>
+                                <span>Grupo de Búsqueda</span>
                             </div>
 
-                            <div className="flex flex-col gap-1 mb-4">
-                                <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-none break-words">
+                            <div className="flex flex-col gap-1 mb-5">
+                                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-none break-words">
                                     {item.usuarios[0].nombre.split(' ')[0]} & {item.usuarios[1].nombre.split(' ')[0]}
                                 </h2>
-                                <span className="text-lg sm:text-xl font-light text-white/80">
+                                <span className="text-xl sm:text-2xl font-medium text-white/80 mt-1">
                                     {item.usuarios[0].edad} y {item.usuarios[1].edad} años
                                 </span>
                             </div>
 
                             {item.bio && (
-                                <div className="flex-1 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 overflow-y-auto shadow-sm mb-2">
-                                    <p className="text-white text-sm sm:text-base leading-relaxed italic">
+                                <div className="flex-1 bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 overflow-y-auto shadow-sm mb-2">
+                                    <p className="text-white text-base sm:text-lg leading-relaxed italic">
                                         "{item.bio}"
                                     </p>
                                 </div>
@@ -256,7 +279,11 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
                 )}
 
                 <button
-                    onClick={(e) => { e.stopPropagation(); navigate(esGrupo ? `/grupo/${item.id}` : `/candidato/${item.id}`); }}
+                    // MODIFICADO: Enviamos los datos en la mochila (state)
+                    onClick={(e) => { 
+                        e.stopPropagation(); 
+                        navigate(esGrupo ? `/grupo/${item.id}` : `/candidato/${item.id}`, { state: { datos: item } }); 
+                    }}
                     className="flex items-center gap-2 px-6 py-2.5 bg-white/30 backdrop-blur-xl hover:bg-white/40 text-white rounded-full border border-white/50 font-bold text-sm transition-all active:scale-95 shadow-xl group z-50"
                 >
                     <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
