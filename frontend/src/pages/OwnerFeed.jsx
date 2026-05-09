@@ -28,19 +28,20 @@ export default function OwnerFeed() {
     }
   }, []);
 
-  const fetchCandidatos = async () => {
-    if (!userId || userRol !== "PROPIETARIO") return;
-    setLoading(true);
-    try {
-      const data = await getCandidatosParaPropietario(userId);
-      setCandidatos(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching candidatos:", error);
-      setCandidatos([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+   const fetchCandidatos = async () => {
+     if (!userId || userRol !== "PROPIETARIO") return;
+     setLoading(true);
+     try {
+       const data = await getCandidatosParaPropietario(userId);
+       setCandidatos(Array.isArray(data) ? data : []);
+     } catch (error) {
+       console.error("Error fetching candidatos:", error);
+       setCandidatos([]);
+     } finally {
+       setLoading(false);
+     }
+   };
+
 
   useEffect(() => {
     if (userRol === "PROPIETARIO") {

@@ -12,6 +12,9 @@ import com.ua.nextflat.repository.InteraccionRepository;
 import com.ua.nextflat.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ua.nextflat.dto.CandidatoFeedDTO;
+import java.time.LocalDate;
+import java.time.Period;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -138,7 +141,7 @@ public class FeedService {
     }
 
     @org.springframework.transaction.annotation.Transactional
-    public Usuario rewindLastCandidatoSwipe(Long propietarioId) {
+    public CandidatoFeedDTO rewindLastCandidatoSwipe(Long propietarioId) {
         Optional<Interaccion> ultimaInteraccionOpt = interaccionRepository
                 .findFirstByUsuarioOrigenIdOrderByFechaDesc(propietarioId);
 
@@ -154,7 +157,45 @@ public class FeedService {
 
         interaccionRepository.delete(ultima);
 
-        return ultima.getUsuarioTarget();
+        Usuario candidato = ultima.getUsuarioTarget();
+        Inmueble inmueble = ultima.getInmuebleDestino();
+
+        // 2. Cndidato
+        CandidatoFeedDTO dto = new CandidatoFeedDTO();
+        dto.setId(candidato.getId());
+        dto.setNombre(candidato.getNombre());
+        dto.setProfesion(candidato.getProfesion());
+        dto.setFotoPerfil(candidato.getFotoPerfil());
+        dto.setBio(candidato.getBio());
+
+        if (candidato.getFechaNacimiento() != null) {
+            dto.setEdad(Period.between(candidato.getFechaNacimiento(), LocalDate.now()).getYears());
+        }
+
+        if (inmueble != null) {
+            dto.setInteresadoEnDireccion(inmueble.getDireccion());
+            dto.setInteresadoEnMunicipio(inmueble.getMunicipio());
+            dto.setInmuebleInteresadoId(inmueble.getId());
+        }
+
+        // 2. Grupos
+        if (candidato.getGrupo() != null) {
+            dto.setEsGrupo(true);
+            List<Usuario> miembros = usuarioRepository.findByGrupoId(candidato.getGrupo().getId());
+            List<CandidatoFeedDTO.UsuarioGrupoDTO> usuariosGrupo = miembros.stream().map(m -> {
+                CandidatoFeedDTO.UsuarioGrupoDTO uDto = new CandidatoFeedDTO.UsuarioGrupoDTO();
+                uDto.setId(m.getId());
+                uDto.setNombre(m.getNombre());
+                if (m.getFechaNacimiento() != null) {
+                    uDto.setEdad(Period.between(m.getFechaNacimiento(), LocalDate.now()).getYears());
+                }
+                uDto.setFotoPerfil(m.getFotoPerfil());
+                return uDto;
+            }).collect(Collectors.toList());
+            dto.setUsuarios(usuariosGrupo);
+        }
+
+        return dto;
     }
 
     public List<FeedInmuebleDTO> getPublicFeed() {

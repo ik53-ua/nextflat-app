@@ -1,23 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { Heart, X, MapPin, Briefcase, RotateCcw, Eye } from 'lucide-react';
+import { Heart, X, MapPin, Briefcase, RotateCcw, Eye, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * CandidatoCard — Tarjeta swipeable de persona para el feed del propietario (US-008).
- *
- * Props:
- *   item     — CandidatoFeedDTO { id, nombre, edad, profesion, fotoPerfil, bio,
- *                                  interesadoEnDireccion, interesadoEnMunicipio }
- *   onLike   — callback cuando el propietario acepta al candidato
- *   onDislike — callback cuando el propietario rechaza al candidato
- *   onRewind — callback cuando el propietario deshace el último rechazo
+ * CandidatoCard — Tarjeta swipeable para feed (Soporta Individual y Grupo - US-014)
  */
 export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
     const [hoverState, setHoverState] = useState('center');
     const cardRef = useRef(null);
     const controls = useAnimation();
     const navigate = useNavigate();
+
+    // 1. Detección de Grupo
+    const esGrupo = item.esGrupo && item.usuarios && item.usuarios.length >= 2;
 
     useEffect(() => {
         if (hoverState === 'left') {
@@ -50,13 +46,16 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
     const handleClick = () => {
         if (hoverState === 'left' && onDislike) onDislike(item);
         if (hoverState === 'right' && onLike) onLike(item);
-        if (hoverState === 'center') navigate(`/candidato/${item.id}`);
+        // MODIFICADO: Enviamos los datos en la mochila (state)
+        if (hoverState === 'center') {
+            navigate(esGrupo ? `/grupo/${item.id}` : `/candidato/${item.id}`, { state: { datos: item } });
+        }
     };
 
-    // Fallback avatar si no hay foto de perfil
-    const avatarUrl = item.fotoPerfil
-        ? item.fotoPerfil
-        : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.nombre || 'User')}&size=400&background=e8385d&color=fff&bold=true`;
+    // Función auxiliar para avatares (fallback)
+    const getAvatarUrl = (foto, nombre) => foto
+        ? foto
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre || 'User')}&size=400&background=e8385d&color=fff&bold=true`;
 
     const leftPanelClipPath = 'polygon(0 0, 40% 0, 60% 100%, 0 100%)';
     const rightPanelClipPath = 'polygon(40% 0, 100% 0, 100% 100%, 60% 100%)';
@@ -131,9 +130,9 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
                 </div>
             </div>
 
-            {/* ═══ TARJETA PRINCIPAL (foto + info) ═══ */}
+            {/* ═══ TARJETA PRINCIPAL (Renderizado Condicional) ═══ */}
             <motion.div
-                className="absolute inset-0 z-10 w-full h-full origin-center overflow-hidden flex bg-white rounded-xl"
+                className="absolute inset-0 z-10 w-full h-full origin-center overflow-hidden bg-white rounded-xl"
                 animate={controls}
                 onClick={handleClick}
                 style={{
@@ -142,61 +141,129 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
                         : 'none',
                 }}
             >
-                {/* 1/3 Izquierdo: Foto de perfil */}
-                <div
-                    className="w-1/3 h-full bg-cover bg-center bg-no-repeat relative"
-                    style={{ backgroundImage: `url(${avatarUrl})` }}
-                >
-                    {/* Sutil sombra interior para profundidad */}
-                    <div className="absolute inset-0 shadow-[inset_-10px_0_20px_rgba(0,0,0,0.05)] pointer-events-none" />
-                </div>
-
-                {/* 2/3 Derecho: Información */}
-                <div
-                    className="w-2/3 h-full flex flex-col p-5 sm:p-8 relative"
-                    style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)' }}
-                >
-
-                    {/* Badge contextual (Piso de interés) */}
-                    {ubicacionInteres && (
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold text-[#e8385d] mb-4 sm:mb-6 shadow-sm w-fit bg-white">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                            <span className="line-clamp-1">Interesado en {ubicacionInteres}</span>
-                        </div>
-                    )}
-
-                    {/* Nombre y Edad */}
-                    <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2 mb-4">
-                        <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-none break-words">
-                            {item.nombre || 'Sin nombre'}
-                        </h2>
-                        {item.edad != null && (
-                            <span className="text-xl sm:text-2xl font-light text-white/70">
-                                {item.edad} años
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Profesión */}
-                    {item.profesion && (
-                        <div className="flex items-center gap-2 text-white/90 font-medium mb-6">
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
-                                <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                {esGrupo ? (
+                    // ==========================================
+                    // LAYOUT GRUPO (NUEVO: DISEÑO "CARTAS SUPERPUESTAS")
+                    // ==========================================
+                    <div className="flex flex-col w-full h-full relative" style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)' }}>
+                        
+                        {/* 45% Superior: Cartas Superpuestas Dinámicas */}
+                        <div className="flex items-center justify-center h-[50%] w-full relative pt-12 px-4">
+                            <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]" />
+                            
+                            {/* Contenedor principal de las cartas */}
+                            <div className="relative w-full h-full flex justify-center items-center z-10 gap-2">
+                                {/* FOTO USUARIO 1 (Tipo Carta con ratio 1:1 encuadrado) */}
+                                <div className="w-[45%] aspect-[1/1] overflow-hidden rounded-2xl border-[5px] border-white shadow-[0_15px_30px_rgba(0,0,0,0.3)] relative group transition-transform hover:z-30 hover:scale-105">
+                                    <img 
+                                        src={getAvatarUrl(item.usuarios[0].fotoPerfil, item.usuarios[0].nombre)} 
+                                        alt={item.usuarios[0].nombre}
+                                        // MODIFICADO: object-top para encuadrar la cara
+                                        className="w-full h-full object-cover object-top"
+                                    />
+                                    <div className="absolute bottom-2 left-2 bg-black/60 px-2.5 py-1 rounded-md text-white text-[10px] font-black shadow-sm">
+                                        {item.usuarios[0].nombre.split(' ')[0]}
+                                    </div>
+                                </div>
+                                
+                                {/* FOTO USUARIO 2 (Tipo Carta) */}
+                                <div className="w-[45%] aspect-[1/1] overflow-hidden rounded-2xl border-[5px] border-white shadow-[0_15px_30px_rgba(0,0,0,0.3)] relative transition-transform hover:z-30 hover:scale-105 -ml-6 z-20">
+                                    <img 
+                                        src={getAvatarUrl(item.usuarios[1].fotoPerfil, item.usuarios[1].nombre)} 
+                                        alt={item.usuarios[1].nombre}
+                                        className="w-full h-full object-cover object-top"
+                                    />
+                                     <div className="absolute bottom-2 left-2 bg-black/60 px-2.5 py-1 rounded-md text-white text-[10px] font-black shadow-sm">
+                                        {item.usuarios[1].nombre.split(' ')[0]}
+                                    </div>
+                                </div>
                             </div>
-                            <span className="text-sm sm:text-base capitalize">{item.profesion}</span>
                         </div>
-                    )}
 
-                    {/* Bio */}
-                    {item.bio && (
-                        <div className="flex-1 bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 overflow-y-auto shadow-sm mb-2">
-                            <p className="text-white text-sm sm:text-base leading-relaxed italic">
-                                "{item.bio}"
-                            </p>
+                        {/* 55% Inferior: Información Combinada */}
+                        <div className="flex-1 flex flex-col p-5 sm:p-8 relative z-20">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold text-[#e8385d] mb-4 shadow-sm w-fit bg-white">
+                                <Users className="w-3 h-3 flex-shrink-0" />
+                                <span>Grupo de Búsqueda</span>
+                            </div>
+
+                            <div className="flex flex-col gap-1 mb-5">
+                                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-none break-words">
+                                    {item.usuarios[0].nombre.split(' ')[0]} & {item.usuarios[1].nombre.split(' ')[0]}
+                                </h2>
+                                <span className="text-xl sm:text-2xl font-medium text-white/80 mt-1">
+                                    {item.usuarios[0].edad} y {item.usuarios[1].edad} años
+                                </span>
+                            </div>
+
+                            {item.bio && (
+                                <div className="flex-1 bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 overflow-y-auto shadow-sm mb-2">
+                                    <p className="text-white text-base sm:text-lg leading-relaxed italic">
+                                        "{item.bio}"
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
+                ) : (
+                    // ==========================================
+                    // LAYOUT INDIVIDUAL (El tuyo original)
+                    // ==========================================
+                    <div className="flex w-full h-full">
+                        {/* 1/3 Izquierdo: Foto de perfil */}
+                        <div
+                            className="w-1/3 h-full bg-cover bg-center bg-no-repeat relative"
+                            style={{ backgroundImage: `url(${getAvatarUrl(item.fotoPerfil, item.nombre)})` }}
+                        >
+                            <div className="absolute inset-0 shadow-[inset_-10px_0_20px_rgba(0,0,0,0.05)] pointer-events-none" />
+                        </div>
 
-                </div>
+                        {/* 2/3 Derecho: Información */}
+                        <div
+                            className="w-2/3 h-full flex flex-col p-5 sm:p-8 relative"
+                            style={{ background: 'linear-gradient(135deg, #e8385d 0%, #c0284a 40%, #8b1a35 100%)' }}
+                        >
+                            {/* Badge contextual */}
+                            {ubicacionInteres && (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold text-[#e8385d] mb-4 sm:mb-6 shadow-sm w-fit bg-white">
+                                    <MapPin className="w-3 h-3 flex-shrink-0" />
+                                    <span className="line-clamp-1">Interesado en {ubicacionInteres}</span>
+                                </div>
+                            )}
+
+                            {/* Nombre y Edad */}
+                            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2 mb-4">
+                                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-none break-words">
+                                    {item.nombre || 'Sin nombre'}
+                                </h2>
+                                {item.edad != null && (
+                                    <span className="text-xl sm:text-2xl font-light text-white/70">
+                                        {item.edad} años
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Profesión */}
+                            {item.profesion && (
+                                <div className="flex items-center gap-2 text-white/90 font-medium mb-6">
+                                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
+                                        <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                                    </div>
+                                    <span className="text-sm sm:text-base capitalize">{item.profesion}</span>
+                                </div>
+                            )}
+
+                            {/* Bio */}
+                            {item.bio && (
+                                <div className="flex-1 bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 overflow-y-auto shadow-sm mb-2">
+                                    <p className="text-white text-sm sm:text-base leading-relaxed italic">
+                                        "{item.bio}"
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </motion.div>
 
             {/* ═══ FIXED UI ELEMENTS (No se mueven con la imagen) ═══ */}
@@ -212,7 +279,11 @@ export default function CandidatoCard({ item, onLike, onDislike, onRewind }) {
                 )}
 
                 <button
-                    onClick={(e) => { e.stopPropagation(); navigate(`/candidato/${item.id}`); }}
+                    // MODIFICADO: Enviamos los datos en la mochila (state)
+                    onClick={(e) => { 
+                        e.stopPropagation(); 
+                        navigate(esGrupo ? `/grupo/${item.id}` : `/candidato/${item.id}`, { state: { datos: item } }); 
+                    }}
                     className="flex items-center gap-2 px-6 py-2.5 bg-white/30 backdrop-blur-xl hover:bg-white/40 text-white rounded-full border border-white/50 font-bold text-sm transition-all active:scale-95 shadow-xl group z-50"
                 >
                     <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />

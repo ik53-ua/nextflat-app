@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 public class PropietarioFeedService {
@@ -34,24 +36,55 @@ public class PropietarioFeedService {
     }
 
     /**
-     * US-008: Devuelve los candidatos (inquilinos) que dieron LIKE a algún piso
-     * del propietario dado, y que el propietario aún no ha evaluado.
+     * US-008 / US-014: Devuelve candidatos. Si pertenecen a un grupo, los empaqueta juntos.
      */
     public List<CandidatoFeedDTO> getCandidatosParaPropietario(Long propietarioId) {
         List<Usuario> candidatos = interaccionRepository.findCandidatosParaPropietario(propietarioId);
+        
+        List<CandidatoFeedDTO> result = new ArrayList<>();
+        Set<Long> gruposProcesados = new HashSet<>(); // Para no meter el mismo grupo dos veces
 
-        return candidatos.stream().map(candidato -> {
+        for (Usuario candidato : candidatos) {
             CandidatoFeedDTO dto = new CandidatoFeedDTO();
-            dto.setId(candidato.getId());
-            dto.setNombre(candidato.getNombre());
-            dto.setProfesion(candidato.getProfesion());
-            dto.setFotoPerfil(candidato.getFotoPerfil());
-            dto.setBio(candidato.getBio());
+            
+            // --- LÓGICA US-014: PACK 2x1 ---
+            if (candidato.getGrupo() != null) {
+                Long grupoId = candidato.getGrupo().getId();
+                
+                // Si ya empaquetamos a este grupo por el otro compañero, lo saltamos
+                if (gruposProcesados.contains(grupoId)) continue;
+                gruposProcesados.add(grupoId);
 
-            // Calcular edad a partir de fechaNacimiento
-            if (candidato.getFechaNacimiento() != null) {
-                int edad = Period.between(candidato.getFechaNacimiento(), LocalDate.now()).getYears();
-                dto.setEdad(edad);
+                // Buscamos a todos los miembros de este grupo
+                List<Usuario> miembros = usuarioRepository.findByGrupoId(grupoId);
+                
+                dto.setId(candidato.getId()); // Usamos el ID del primero para el Swipe
+                dto.setEsGrupo(true);
+                dto.setBio(candidato.getBio()); // Usamos la bio del que dio Like
+                
+                List<CandidatoFeedDTO.UsuarioGrupoDTO> usuariosGrupo = new ArrayList<>();
+                for (Usuario miembro : miembros) {
+                    CandidatoFeedDTO.UsuarioGrupoDTO miniDto = new CandidatoFeedDTO.UsuarioGrupoDTO();
+                    miniDto.setId(miembro.getId());
+                    miniDto.setNombre(miembro.getNombre());
+                    miniDto.setFotoPerfil(miembro.getFotoPerfil());
+                    if (miembro.getFechaNacimiento() != null) {
+                        miniDto.setEdad(Period.between(miembro.getFechaNacimiento(), LocalDate.now()).getYears());
+                    }
+                    usuariosGrupo.add(miniDto);
+                }
+                dto.setUsuarios(usuariosGrupo);
+
+            } else {
+                // --- LÓGICA INDIVIDUAL NORMAL ---
+                dto.setId(candidato.getId());
+                dto.setNombre(candidato.getNombre());
+                dto.setProfesion(candidato.getProfesion());
+                dto.setFotoPerfil(candidato.getFotoPerfil());
+                dto.setBio(candidato.getBio());
+                if (candidato.getFechaNacimiento() != null) {
+                    dto.setEdad(Period.between(candidato.getFechaNacimiento(), LocalDate.now()).getYears());
+                }
             }
 
             // Recuperar el piso al que dio Like (el más reciente)
@@ -67,59 +100,59 @@ public class PropietarioFeedService {
                 }
             }
 
-            return dto;
-        }).collect(Collectors.toList());
+            result.add(dto);
+        }
+        return result;
     }
 
     /**
-     * US-008: Registra el swipe del propietario sobre un candidato.
-     * Crea una Interaccion donde:
-     *   - usuarioOrigen  = propietario
-     *   - usuarioTarget  = candidato (inquilino)
-     *   - inmuebleDestino = null (evaluación de persona, no de piso)
-     *   - tipo           = LIKE | DISLIKE
+     * US-014: Swipe Atómico. Aplica el LIKE/DISLIKE a todos los miembros del grupo.
      */
     public void processSwipePropietario(SwipeCandidatoRequestDTO request) {
         Usuario propietario = usuarioRepository.findById(request.getPropietarioId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Propietario no encontrado con ID: " + request.getPropietarioId()));
+                .orElseThrow(() -> new IllegalArgumentException("Propietario no encontrado"));
 
-        Usuario candidato = usuarioRepository.findById(request.getCandidatoId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Candidato no encontrado con ID: " + request.getCandidatoId()));
+        Usuario candidatoPrincipal = usuarioRepository.findById(request.getCandidatoId())
+                .orElseThrow(() -> new IllegalArgumentException("Candidato no encontrado"));
 
-        Interaccion interaccion = new Interaccion();
-        interaccion.setUsuarioOrigen(propietario);
-        interaccion.setUsuarioTarget(candidato);
-        interaccion.setInmuebleDestino(null); // swipe de persona, no de piso
-        interaccion.setTipo(request.getTipoInteraccion());
+        // --- LÓGICA US-014: OBTENER A TODOS LOS AFECTADOS ---
+        List<Usuario> usuariosAfectados = new ArrayList<>();
+        if (candidatoPrincipal.getGrupo() != null) {
+            usuariosAfectados.addAll(usuarioRepository.findByGrupoId(candidatoPrincipal.getGrupo().getId()));
+        } else {
+            usuariosAfectados.add(candidatoPrincipal); // Va solo
+        }
 
-        interaccionRepository.save(interaccion);
+        // Recuperar el inmueble que le gustó al candidato originalmente (para hacer el Match)
+        List<Interaccion> likesAnteriores = interaccionRepository
+                .findLikesDeCandidatoEnPisosDelPropietario(candidatoPrincipal.getId(), propietario.getId());
+        com.ua.nextflat.model.Inmueble inmuebleVinculado = likesAnteriores.isEmpty() ? null : likesAnteriores.get(0).getInmuebleDestino();
 
-        if (request.getTipoInteraccion() == com.ua.nextflat.model.enums.TipoInteraccion.LIKE) {
-            // Find the inmueble that the candidate liked
-            List<Interaccion> likesAnteriores = interaccionRepository
-                    .findLikesDeCandidatoEnPisosDelPropietario(candidato.getId(), propietario.getId());
+        // Aplicar la acción a TODOS simultáneamente
+        for (Usuario afectado : usuariosAfectados) {
+            
+            // 1. Guardar Interacción
+            Interaccion interaccion = new Interaccion();
+            interaccion.setUsuarioOrigen(propietario);
+            interaccion.setUsuarioTarget(afectado);
+            interaccion.setInmuebleDestino(null);
+            interaccion.setTipo(request.getTipoInteraccion());
+            interaccionRepository.save(interaccion);
 
-            if (!likesAnteriores.isEmpty()) {
-                Interaccion likeCandidato = likesAnteriores.get(0);
-                com.ua.nextflat.model.Inmueble inmuebleVinculado = likeCandidato.getInmuebleDestino();
+            // 2. Si es LIKE, generar Match y Chat para cada uno
+            if (request.getTipoInteraccion() == com.ua.nextflat.model.enums.TipoInteraccion.LIKE && inmuebleVinculado != null) {
+                
+                com.ua.nextflat.model.Match nuevoMatch = new com.ua.nextflat.model.Match();
+                nuevoMatch.setPropietario(propietario);
+                nuevoMatch.setInquilino(afectado);
+                nuevoMatch.setInmueble(inmuebleVinculado);
+                com.ua.nextflat.model.Match savedMatch = matchRepository.save(nuevoMatch);
 
-                if (inmuebleVinculado != null) {
-                    // Create Match
-                    com.ua.nextflat.model.Match nuevoMatch = new com.ua.nextflat.model.Match();
-                    nuevoMatch.setPropietario(propietario);
-                    nuevoMatch.setInquilino(candidato);
-                    nuevoMatch.setInmueble(inmuebleVinculado);
-                    com.ua.nextflat.model.Match savedMatch = matchRepository.save(nuevoMatch);
-
-                    // Create Chat
-                    com.ua.nextflat.model.Chat nuevoChat = new com.ua.nextflat.model.Chat();
-                    nuevoChat.setMatchVinculado(savedMatch);
-                    nuevoChat.setNombreGrupo("Chat: " + inmuebleVinculado.getDireccion());
-                    nuevoChat.setEsGrupal(false);
-                    chatRepository.save(nuevoChat);
-                }
+                com.ua.nextflat.model.Chat nuevoChat = new com.ua.nextflat.model.Chat();
+                nuevoChat.setMatchVinculado(savedMatch);
+                nuevoChat.setNombreGrupo("Chat: " + inmuebleVinculado.getDireccion());
+                nuevoChat.setEsGrupal(false); // Podría ser true en el futuro si soportáis chats grupales
+                chatRepository.save(nuevoChat);
             }
         }
     }

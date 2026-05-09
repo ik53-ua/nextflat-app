@@ -7,6 +7,7 @@ import com.ua.nextflat.service.FeedService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ua.nextflat.dto.CandidatoFeedDTO;
 
 import java.util.List;
 
@@ -58,7 +59,7 @@ public class FeedController {
     @DeleteMapping("/propietario-rewind/{propietarioId}")
     public ResponseEntity<?> rewindCandidatoSwipe(@PathVariable Long propietarioId) {
         try {
-            Usuario candidatoRecuperado = feedService.rewindLastCandidatoSwipe(propietarioId);
+            CandidatoFeedDTO candidatoRecuperado = feedService.rewindLastCandidatoSwipe(propietarioId);
             return ResponseEntity.ok(candidatoRecuperado);
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
