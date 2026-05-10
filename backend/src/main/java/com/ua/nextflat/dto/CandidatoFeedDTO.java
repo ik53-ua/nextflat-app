@@ -19,6 +19,8 @@ public class CandidatoFeedDTO {
     private String interesadoEnMunicipio;
     private Long inmuebleInteresadoId;
 
+    private boolean esSuperLike = false;
+
     // --- NUEVOS CAMPOS PARA US-014 (GRUPOS) ---
     private boolean esGrupo = false;
     private List<UsuarioGrupoDTO> usuarios;
@@ -35,4 +37,5 @@ public class CandidatoFeedDTO {
         private Integer edad;
         private String fotoPerfil;
     }
+
 }

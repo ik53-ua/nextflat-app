@@ -13,6 +13,7 @@ public class CitaDTO {
     private String inquilinoNombre;
     private Long inmuebleId;
     private String inmuebleDireccion;
+    private Long creadorId;
     private LocalDateTime fechaHora;
     private EstadoCita estado;
     private String motivo;

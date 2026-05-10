@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { format, addDays, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export default function AgendarCitaModal({ isOpen, onClose, onSubmit, inmuebleId = null }) {
+// AÑADIDO userRol AL FINAL DE ESTA LÍNEA 👇
+export default function AgendarCitaModal({ isOpen, onClose, onSubmit, inmuebleId = null, userRol }) {
   const [fecha, setFecha] = useState(format(addDays(startOfToday(), 1), 'yyyy-MM-dd'));
   const [hora, setHora] = useState('10:00');
-  const [motivo, setMotivo] = useState('Me gustaría visitar el piso.');
+  const [motivo, setMotivo] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setMotivo(userRol === 'PROPIETARIO' ? '¿Te gustaría venir a ver el piso?' : 'Me gustaría visitar el piso.');
+    }
+  }, [isOpen, userRol]);
 
   if (!isOpen) return null;
 
@@ -19,14 +26,14 @@ export default function AgendarCitaModal({ isOpen, onClose, onSubmit, inmuebleId
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative">
-        
+
         {/* Header */}
         <div className="bg-gradient-to-r from-[#e8385d] to-[#ff7b93] px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <CalendarIcon size={20} />
             Agendar Visita
           </h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-white/80 hover:text-white transition-colors rounded-full p-1 hover:bg-white/20"
           >
@@ -39,8 +46,8 @@ export default function AgendarCitaModal({ isOpen, onClose, onSubmit, inmuebleId
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Día de la visita</label>
             <div className="relative">
-              <input 
-                type="date" 
+              <input
+                type="date"
                 required
                 min={format(startOfToday(), 'yyyy-MM-dd')}
                 value={fecha}
@@ -54,8 +61,8 @@ export default function AgendarCitaModal({ isOpen, onClose, onSubmit, inmuebleId
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Hora (Aprox)</label>
             <div className="relative">
-              <input 
-                type="time" 
+              <input
+                type="time"
                 required
                 value={hora}
                 onChange={(e) => setHora(e.target.value)}
@@ -67,19 +74,19 @@ export default function AgendarCitaModal({ isOpen, onClose, onSubmit, inmuebleId
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Mensaje para el propietario</label>
-            <textarea 
+            <label className="block text-sm font-medium text-slate-700 mb-1">Mensaje</label>
+            <textarea
               rows="3"
               required
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
               className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#e8385d]/50 focus:border-[#e8385d] outline-none transition-all text-slate-700 resize-none"
-              placeholder="Ej. Me interesa mucho el piso, ¿podría ir a verlo?"
+              placeholder="Escribe tu mensaje aquí..."
             />
           </div>
 
           <div className="pt-2">
-            <button 
+            <button
               type="submit"
               className="w-full bg-[#e8385d] hover:bg-[#d42d50] text-white font-semibold py-3 rounded-xl shadow-md shadow-[#e8385d]/20 transition-all active:scale-[0.98]"
             >

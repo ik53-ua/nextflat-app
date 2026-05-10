@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.ua.nextflat.dto.CandidatoFeedDTO;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.List;
 
@@ -80,5 +83,11 @@ public class FeedController {
         List<FeedInmuebleDTO> feed = feedService.getFeedForUser(null, municipio, precioMin, precioMax, 
                 numHabitaciones, numBanos, tieneAscensor, admiteMascotas, esCompartido);
         return ResponseEntity.ok(feed);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<String> handleIllegalStateException(IllegalStateException ex) {
+        // Devuelve un error 400 (Bad Request) con el texto exacto (ej: "Has agotado tus 5 Super Likes...")
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }

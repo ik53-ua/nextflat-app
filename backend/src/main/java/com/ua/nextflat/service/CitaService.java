@@ -45,6 +45,7 @@ public class CitaService {
         cita.setPropietario(propietario);
         cita.setInquilino(inquilino);
         cita.setInmueble(inmueble);
+        cita.setCreadorId(request.getCreadorId());
         cita.setFechaHora(request.getFechaHora());
         cita.setMotivo(request.getMotivo());
         cita.setNotas(request.getNotas());
@@ -61,13 +62,34 @@ public class CitaService {
         List<Cita> citas;
         if (usuario.getRol() == RolUsuario.PROPIETARIO) {
             citas = citaRepository.findByPropietarioIdOrderByFechaHoraAsc(usuarioId);
+            // FILTRAR: Solo las que el propietario NO ha ocultado
+            return citas.stream()
+                .filter(c -> c.getOcultoPropietario() == null || !c.getOcultoPropietario())
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
         } else if (usuario.getRol() == RolUsuario.INQUILINO) {
             citas = citaRepository.findByInquilinoIdOrderByFechaHoraAsc(usuarioId);
+            // FILTRAR: Solo las que el inquilino NO ha ocultado
+            return citas.stream()
+                .filter(c -> c.getOcultoInquilino() == null || !c.getOcultoInquilino())
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
         } else {
-            citas = List.of(); // Supervisor, etc.
+            return List.of();
         }
+    }
 
-        return citas.stream().map(this::mapToDTO).collect(Collectors.toList());
+    // AÑADIR ESTE MÉTODO:
+    public void ocultarCitaParaUsuario(Long citaId, Long usuarioId) {
+        Cita cita = citaRepository.findById(citaId)
+                .orElseThrow(() -> new IllegalArgumentException("Cita no encontrada"));
+        
+        if (cita.getPropietario().getId().equals(usuarioId)) {
+            cita.setOcultoPropietario(true);
+        } else if (cita.getInquilino().getId().equals(usuarioId)) {
+            cita.setOcultoInquilino(true);
+        }
+        citaRepository.save(cita);
     }
 
     public CitaDTO actualizarEstadoCita(Long citaId, EstadoCita nuevoEstado) {
@@ -89,6 +111,7 @@ public class CitaService {
             dto.setInmuebleId(cita.getInmueble().getId());
             dto.setInmuebleDireccion(cita.getInmueble().getDireccion());
         }
+        dto.setCreadorId(cita.getCreadorId());
         dto.setFechaHora(cita.getFechaHora());
         dto.setEstado(cita.getEstado());
         dto.setMotivo(cita.getMotivo());

@@ -170,18 +170,25 @@ export default function ChatPage() {
         body: JSON.stringify({
           propietarioId: propietarioId,
           inquilinoId: inquilinoId,
-          inmuebleId: null, // No disponemos del inmuebleId exacto en esta vista
+          inmuebleId: null,
+          creadorId: currentUserId,
           ...citaData
         })
       });
 
       if (res.ok) {
+        // --- CAMBIAMOS EL MENSAJE AQUÍ ---
+        const isPropietario = currentUser.rol === 'PROPIETARIO';
+        const mensajeChat = isPropietario
+          ? `🗓️ He propuesto una visita para el ${citaData.fechaHora.replace('T', ' a las ')}. Mensaje: "${citaData.motivo}"`
+          : `🗓️ He solicitado una visita para el ${citaData.fechaHora.replace('T', ' a las ')}. Mensaje: "${citaData.motivo}"`;
+
         await fetch(`${API_URL}/api/chats/${chatId}/mensajes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             emisorId: currentUserId,
-            contenido: `🗓️ He propuesto una visita para el ${citaData.fechaHora.replace('T', ' a las ')}. Motivo: ${citaData.motivo}`
+            contenido: mensajeChat
           })
         });
         fetchChatAndMessages();
@@ -246,7 +253,7 @@ export default function ChatPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setIsModalOpen(true)}
               className="p-2 text-[#e8385d] hover:bg-rose-50 rounded-full transition-colors"
               title="Agendar visita"
@@ -442,12 +449,13 @@ export default function ChatPage() {
           animation: fade-in-up 0.3s ease-out forwards;
         }
       `}</style>
-      
-      <AgendarCitaModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSubmit={handleAgendarSubmit} 
+
+      <AgendarCitaModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleAgendarSubmit}
         inmuebleId={chat?.inmuebleId}
+        userRol={currentUser.rol}
       />
     </div>
   );

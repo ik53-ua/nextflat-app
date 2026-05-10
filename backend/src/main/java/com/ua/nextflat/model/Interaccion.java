@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "interacciones")
 public class Interaccion {
+
+    private boolean esSuperLike = false;
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -14,6 +14,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
+
+    private boolean esPremium = false;
+    private int superLikesRestantes = 5;
+    private int rewindsRestantes = 3;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

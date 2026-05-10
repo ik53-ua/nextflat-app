@@ -12,4 +12,5 @@ public class SwipeRequestDTO {
     private Long usuarioOrigenId;
     private Long inmuebleDestinoId;
     private TipoInteraccion tipoInteraccion;
+    private boolean esSuperLike = false;
 }

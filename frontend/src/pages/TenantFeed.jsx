@@ -15,7 +15,20 @@ export default function TenantFeed() {
   const [showLoginGate, setShowLoginGate] = useState(false);
   const [showIncompleteProfileGate, setShowIncompleteProfileGate] = useState(false);
 
+  // (Debajo de los estados del pago simulado)
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [limitErrorMsg, setLimitErrorMsg] = useState("");
+
   const [showFilters, setShowFilters] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  // --- ESTADOS PARA EL PAGO SIMULADO ---
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingSuperLikeItem, setPendingSuperLikeItem] = useState(null);
+
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvc, setCvc] = useState("");
+  const [paymentError, setPaymentError] = useState("");
 
   const [municipioFilter, setMunicipioFilter] = useState("");
   const [precioMinFilter, setPrecioMinFilter] = useState(0);
@@ -101,19 +114,18 @@ export default function TenantFeed() {
     navigate('/feed');
   };
 
-  const handleSwipe = async (type, item) => {
-    // If not logged in → intercept and show login gate modal
+  const handleSwipe = async (type, item, isSuperLike = false) => {
     if (!userId) {
       setShowLoginGate(true);
       return;
     }
 
-    // Si falta información del perfil, bloqueamos la acción y mostramos el aviso
     if (!isProfileComplete) {
       setShowIncompleteProfileGate(true);
       return;
     }
 
+    // Quitamos la tarjeta temporalmente de la pantalla
     setFlats((prev) => prev.filter((f) => f.id !== item.id));
 
     try {
@@ -121,14 +133,103 @@ export default function TenantFeed() {
         usuarioOrigenId: userId,
         inmuebleDestinoId: item.id,
         tipoInteraccion: type,
+        esSuperLike: isSuperLike,
       });
     } catch (error) {
       console.error("Failed to record swipe:", error);
+
+      let errorMsg = "No se ha podido procesar la acción.";
+      if (error.response && error.response.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        } else {
+          errorMsg = JSON.stringify(error.response.data);
+        }
+      }
+
+      // QUITAMOS EL HORRIBLE ALERT Y USAMOS NUESTRO MODAL
+      setLimitErrorMsg(errorMsg);
+      setShowLimitModal(true);
+
+      // La tarjeta vuelve a su sitio sigilosamente detrás del modal
+      setFlats((prev) => [...prev, item]);
     }
   };
 
-  const handleLike = (item) => handleSwipe("LIKE", item);
-  const handleDislike = (item) => handleSwipe("DISLIKE", item);
+  const handleLike = (item) => handleSwipe("LIKE", item, false);
+  const handleDislike = (item) => handleSwipe("DISLIKE", item, false);
+  const handleSuperLike = (item) => {
+    if (!userId) {
+      setShowLoginGate(true);
+      return;
+    }
+    if (!isProfileComplete) {
+      setShowIncompleteProfileGate(true);
+      return;
+    }
+
+    // Si ya es Premium (lo comprobamos del localStorage), hace el swipe directamente
+    if (currentUser?.esPremium) {
+      handleSwipe("LIKE", item, true);
+    } else {
+      // Si no es Premium, le pedimos la tarjeta y guardamos el piso en "espera"
+      setPendingSuperLikeItem(item);
+      setShowPaymentModal(true);
+      setPaymentError(""); // Limpiamos errores anteriores
+      setCardNumber("");
+      setExpiry("");
+      setCvc("");
+    }
+  };
+
+  const handleSimulatePayment = async () => {
+    // 1. Quitar espacios y comprobar que solo haya números
+    const cleanCard = cardNumber.replace(/\s|-/g, '');
+    const cleanCvc = cvc.replace(/\s/g, '');
+    const expiryRegex = /^(0[1-9]|1[0-2])\/?([0-9]{2})$/; // Formato MM/AA
+
+    // 2. Validaciones
+    if (!/^\d+$/.test(cleanCard) || cleanCard.length !== 16) {
+      setPaymentError("La tarjeta debe tener 16 números exactos.");
+      return;
+    }
+    if (!expiryRegex.test(expiry)) {
+      setPaymentError("La fecha de caducidad debe tener formato MM/AA.");
+      return;
+    }
+    if (!/^\d+$/.test(cleanCvc) || cleanCvc.length !== 3) {
+      setPaymentError("El CVC debe tener 3 números exactos.");
+      return;
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      // 1. Avisamos al backend para que lo guarde en la BD
+      const response = await fetch(`${apiUrl}/api/usuarios/${userId}/premium`, {
+        method: 'PUT'
+      });
+
+      if (response.ok) {
+        const userUpdated = await response.json();
+        // 2. Ahora sí, guardamos en LocalStorage la respuesta real del servidor
+        localStorage.setItem("usuarioLogueado", JSON.stringify(userUpdated));
+
+        alert("¡Pago con éxito! 🎉 Ahora eres usuario Premium.");
+
+        if (pendingSuperLikeItem) {
+          handleSwipe("LIKE", pendingSuperLikeItem, true);
+        }
+        setShowPaymentModal(false);
+        setPendingSuperLikeItem(null);
+      } else {
+        setPaymentError("No se pudo activar el premium en el servidor.");
+      }
+    } catch (error) {
+      setPaymentError("Error al procesar el pago en el servidor.");
+    }
+  };
 
   const handleRewind = async () => {
     if (!userId) return;
@@ -145,23 +246,27 @@ export default function TenantFeed() {
           `${dbFlat.numHabitaciones} Hab`,
           `${dbFlat.numBanos} Baños`,
         ],
-        images:
-          dbFlat.fotos && dbFlat.fotos.length > 0
-            ? dbFlat.fotos
-            : ["https://via.placeholder.com/800x600?text=Sin+Foto"],
+        images: dbFlat.fotos && dbFlat.fotos.length > 0
+          ? dbFlat.fotos
+          : ["https://via.placeholder.com/800x600?text=Sin+Foto"],
       };
 
-      // 3. Lo metemos al array para que aparezca en pantalla con su foto y sus etiquetas
       setFlats((prev) => [...prev, formattedRestoredFlat]);
     } catch (error) {
-      alert(error.response?.data || "No se puede deshacer esta acción");
+      const errorMsg = error.response?.data || "No se puede deshacer esta acción";
+      // Si el backend nos avisa del límite, mostramos el modal Premium
+      if (errorMsg.includes("Premium") || errorMsg.includes("agotado")) {
+        setShowPremiumModal(true);
+      } else {
+        alert(errorMsg);
+      }
     }
   };
 
 
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden relative pt-6">
+    <div className="w-full h-full flex flex-col overflow-hidden relative pt-0">
       <div className="flex-1 relative flex items-center justify-center">
         {loading ? (
           <div className="flex flex-col items-center text-slate-500 space-y-4">
@@ -200,6 +305,7 @@ export default function TenantFeed() {
                       onLike={handleLike}
                       onDislike={handleDislike}
                       onRewind={handleRewind}
+                      onSuperLike={handleSuperLike}
                     />
                   );
                 }
@@ -355,8 +461,8 @@ export default function TenantFeed() {
           >
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight">Filtros</h2>
-              <button 
-                onClick={handleCloseModal} 
+              <button
+                onClick={handleCloseModal}
                 className="w-12 h-12 flex items-center justify-center bg-white text-slate-800 rounded-full hover:bg-slate-200 transition-colors shadow-sm"
               >
                 <span className="text-xl font-bold">✕</span>
@@ -387,8 +493,8 @@ export default function TenantFeed() {
               </div>
               <div className="space-y-6">
                 <div>
-                   <p className="text-[10px] font-bold text-slate-400 mb-2 uppercase">Mínimo</p>
-                   <input
+                  <p className="text-[10px] font-bold text-slate-400 mb-2 uppercase">Mínimo</p>
+                  <input
                     type="range"
                     min="0"
                     max="2000"
@@ -417,8 +523,8 @@ export default function TenantFeed() {
             <div className="grid grid-cols-2 gap-6 mb-8">
               <div>
                 <label className="block text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Habitaciones</label>
-                <select 
-                  value={numHabitacionesFilter || ""} 
+                <select
+                  value={numHabitacionesFilter || ""}
                   onChange={(e) => setNumHabitacionesFilter(e.target.value ? Number(e.target.value) : null)}
                   className="w-full p-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-[#e8385d] focus:outline-none transition-all font-bold text-slate-700"
                 >
@@ -431,8 +537,8 @@ export default function TenantFeed() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Baños</label>
-                <select 
-                  value={numBanosFilter || ""} 
+                <select
+                  value={numBanosFilter || ""}
                   onChange={(e) => setNumBanosFilter(e.target.value ? Number(e.target.value) : null)}
                   className="w-full p-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-[#e8385d] focus:outline-none transition-all font-bold text-slate-700"
                 >
@@ -456,13 +562,12 @@ export default function TenantFeed() {
                   <button
                     key={item.label}
                     onClick={() => item.setter(item.state === null ? true : item.state === true ? false : null)}
-                    className={`px-5 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 transition-all border-2 ${
-                      item.state === true 
-                        ? "bg-[#e8385d] border-[#e8385d] text-white shadow-lg shadow-[#e8385d]/20" 
-                        : item.state === false
-                          ? "bg-slate-800 border-slate-800 text-white"
-                          : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
-                    }`}
+                    className={`px-5 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 transition-all border-2 ${item.state === true
+                      ? "bg-[#e8385d] border-[#e8385d] text-white shadow-lg shadow-[#e8385d]/20"
+                      : item.state === false
+                        ? "bg-slate-800 border-slate-800 text-white"
+                        : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"
+                      }`}
                   >
                     <span>{item.icon}</span>
                     {item.label}
@@ -487,7 +592,7 @@ export default function TenantFeed() {
                   setTieneAscensorFilter(null);
                   setAdmiteMascotasFilter(null);
                   setEsCompartidoFilter(null);
-                  
+
                   // No navegamos ni cerramos, solo reseteamos los estados locales de los inputs
                 }}
                 className="flex-1 py-4 rounded-2xl font-black text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all uppercase tracking-widest text-xs"
@@ -527,6 +632,171 @@ export default function TenantFeed() {
           to   { transform: translateY(0);    opacity: 1; }
         }
       `}</style>
+      {/* ═══ Premium Gate Modal ═══ */}
+      {showPremiumModal && (
+        <div
+          className="absolute inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={() => setShowPremiumModal(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 bg-white rounded-3xl shadow-2xl overflow-hidden p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-gradient-to-tr from-yellow-300 to-yellow-500 shadow-lg shadow-yellow-500/30">
+              <span className="text-3xl">👑</span>
+            </div>
+            <h2 className="text-2xl font-black text-slate-800 mb-2">¡Límite alcanzado!</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Has agotado tus usos diarios para deshacer *Swipes*. Pásate a <b>NextFlat Premium</b> para tener usos ilimitados y destacar tu perfil con Super Likes.
+            </p>
+            <button
+              onClick={() => {
+                setShowPremiumModal(false);
+                setShowPaymentModal(true); // ¡Esto abre la pasarela de pago simulada!
+              }}
+              className="w-full py-4 rounded-xl font-bold text-white transition-all transform hover:scale-[1.02] shadow-lg shadow-yellow-500/30 bg-gradient-to-r from-yellow-400 to-amber-500"
+            >
+              Obtener Premium (9.99€/mes)
+            </button>
+            <button
+              onClick={() => setShowPremiumModal(false)}
+              className="mt-4 text-xs font-semibold text-slate-400 hover:text-slate-600"
+            >
+              Quizás más tarde
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Payment Gate Modal (Simulado) ═══ */}
+      {showPaymentModal && (
+        <div
+          className="absolute inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(5px)" }}
+          onClick={() => setShowPaymentModal(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 bg-white rounded-3xl shadow-2xl overflow-hidden p-6"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: "nfSlideUp 0.3s ease-out forwards" }}
+          >
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 bg-gradient-to-br from-slate-800 to-slate-900 shadow-lg">
+                <span className="text-2xl text-white">💳</span>
+              </div>
+              <h2 className="text-xl font-black text-slate-800">Mejora a Premium</h2>
+              <p className="text-slate-500 text-xs mt-1">
+                Destaca tu perfil con Super Likes para que los propietarios te vean primero. Solo 9.99€/mes.
+              </p>
+            </div>
+
+            {/* Formulario de Pago */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Número de Tarjeta</label>
+                <input
+                  type="text"
+                  placeholder="1234 5678 1234 5678"
+                  maxLength="19" // 16 números + 3 espacios
+                  value={cardNumber}
+                  onChange={(e) => {
+                    // 1. Quitamos todo lo que NO sea un número
+                    let val = e.target.value.replace(/\D/g, '');
+                    // 2. Agrupamos de 4 en 4 y unimos con un espacio
+                    let formatted = val.match(/.{1,4}/g)?.join(' ') || '';
+                    setCardNumber(formatted);
+                  }}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#e8385d] focus:outline-none text-sm font-medium transition-colors"
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Caducidad</label>
+                  <input
+                    type="text"
+                    placeholder="MM/AA"
+                    maxLength="5" // 4 números + 1 barra
+                    value={expiry}
+                    onChange={(e) => {
+                      // 1. Quitamos todo lo que NO sea número
+                      let val = e.target.value.replace(/\D/g, '');
+                      // 2. Ponemos la barra automáticamente después del segundo número
+                      if (val.length > 2) {
+                        val = val.substring(0, 2) + '/' + val.substring(2, 4);
+                      }
+                      setExpiry(val);
+                    }}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#e8385d] focus:outline-none text-sm font-medium transition-colors text-center"
+                  />
+                </div>
+                <div className="w-24">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CVC</label>
+                  <input
+                    type="text"
+                    placeholder="123"
+                    maxLength="3"
+                    value={cvc}
+                    onChange={(e) => setCvc(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#e8385d] focus:outline-none text-sm font-medium transition-colors text-center"
+                  />
+                </div>
+              </div>
+
+              {/* Mensaje de Error */}
+              {paymentError && (
+                <p className="text-red-500 text-xs font-bold text-center bg-red-50 py-2 rounded-lg">
+                  ⚠️ {paymentError}
+                </p>
+              )}
+
+              <button
+                onClick={handleSimulatePayment}
+                className="w-full py-3.5 mt-2 rounded-xl font-bold text-white transition-all transform hover:scale-[1.02] shadow-lg shadow-blue-500/30 bg-gradient-to-r from-blue-600 to-indigo-600"
+              >
+                Pagar 9.99€ de forma segura
+              </button>
+
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="w-full mt-2 text-xs font-semibold text-slate-400 hover:text-slate-600"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+      }
+      {/* ═══ Limit/Error Modal ═══ */}
+      {showLimitModal && (
+        <div
+          className="absolute inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={() => setShowLimitModal(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 bg-white rounded-3xl shadow-2xl overflow-hidden p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: "nfSlideUp 0.3s ease-out forwards" }}
+          >
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-100 shadow-md">
+              <span className="text-3xl">⚠️</span>
+            </div>
+            <h2 className="text-2xl font-black text-slate-800 mb-2">Acción denegada</h2>
+            <p className="text-slate-500 text-sm mb-6 font-medium px-2">
+              {limitErrorMsg}
+            </p>
+            <button
+              onClick={() => setShowLimitModal(false)}
+              className="w-full py-4 rounded-xl font-bold text-white transition-all transform hover:scale-[1.02] shadow-lg shadow-red-500/30 bg-gradient-to-r from-[#e8385d] to-[#ff6b6b]"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

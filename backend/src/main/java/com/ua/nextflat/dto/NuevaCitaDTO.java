@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 public class NuevaCitaDTO {
     private Long propietarioId;
     private Long inquilinoId;
-    private Long inmuebleId; // Opcional, puede ser null
+    private Long inmuebleId; 
+    private Long creadorId; 
     private LocalDateTime fechaHora;
     private String motivo;
     private String notas;

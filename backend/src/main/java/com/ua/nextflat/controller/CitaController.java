@@ -41,4 +41,10 @@ public class CitaController {
         CitaDTO actualizada = citaService.actualizarEstadoCita(citaId, estado);
         return ResponseEntity.ok(actualizada);
     }
+
+    @DeleteMapping("/{citaId}/usuario/{usuarioId}")
+    public ResponseEntity<Void> eliminarDeCalendario(@PathVariable Long citaId, @PathVariable Long usuarioId) {
+        citaService.ocultarCitaParaUsuario(citaId, usuarioId);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -7,26 +7,20 @@ function ProfileAvatar({ user }) {
     const isPropietario = user.rol === 'PROPIETARIO';
     const initial = user.nombre?.charAt(0)?.toUpperCase() || '?';
 
-    if (isPropietario) {
+    if (user.fotoPerfil) {
         return (
-            <div
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center text-white font-bold text-sm shadow-md select-none"
-                title={user.nombre}
-            >
-                {initial}
-            </div>
+            <img
+                src={user.fotoPerfil}
+                alt={user.nombre}
+                className={`w-9 h-9 rounded-full object-cover shadow-md ${user.rol === 'PROPIETARIO' ? 'border-2 border-rose-400' : 'border-2 border-indigo-400'
+                    }`}
+            />
         );
     }
 
-    return user.fotoPerfil ? (
-        <img
-            src={user.fotoPerfil}
-            alt={user.nombre}
-            className="w-9 h-9 rounded-full object-cover border-2 border-rose-400 shadow-md"
-        />
-    ) : (
+    return (
         <div
-            className="w-9 h-9 rounded-full bg-slate-300 flex items-center justify-center text-slate-600 font-bold text-sm shadow-md select-none"
+            className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center text-white font-bold text-sm shadow-md select-none"
             title={user.nombre}
         >
             {initial}
@@ -42,11 +36,10 @@ function BottomTab({ to, label, Icon, activeAlso }) {
             className={({ isActive }) => {
                 // also highlight when on a related sub-route (activeAlso list)
                 const extraActive = activeAlso?.some(path => window.location.pathname.startsWith(path));
-                return `flex flex-col items-center justify-center flex-1 py-2 transition-colors duration-200 ${
-                    isActive || extraActive
-                        ? 'text-[#e8385d]'
-                        : 'text-slate-400 hover:text-slate-600'
-                }`;
+                return `flex flex-col items-center justify-center flex-1 py-2 transition-colors duration-200 ${isActive || extraActive
+                    ? 'text-[#e8385d]'
+                    : 'text-slate-400 hover:text-slate-600'
+                    }`;
             }}
         >
             <Icon className="w-5 h-5 mb-0.5" strokeWidth={2} />
@@ -92,22 +85,33 @@ export default function AppLayout({ children }) {
                     style={{ color: '#e8385d' }}>
                     <Link to={homeRoute}>NextFlat</Link>
                 </h1>
-                
+
                 <div className="flex items-center gap-3">
                     {user ? (
                         <>
                             <div className="flex items-center gap-1 hidden sm:flex">
-                                <span className="text-sm font-medium text-slate-700">
+                                {/* Si es premium, aplicamos un gradiente dorado, si no, gris normal */}
+                                <span className={`text-sm ${user.esPremium
+                                    ? 'font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-amber-500'
+                                    : 'font-medium text-slate-700'
+                                    }`}>
                                     {user.nombre}
                                 </span>
+
+                                {/* Corona si es Premium */}
+                                {user.esPremium && (
+                                    <span className="text-xs mr-0.5 animate-pulse" title="Usuario Premium"></span>
+                                )}
+
+                                {/* Badge azul si está verificado */}
                                 {user.estadoVerificacion === 'VERIFICADO' && (
-                                    <BadgeCheck className="w-4 h-4 text-blue-500" />
+                                    <BadgeCheck className="w-4 h-4 text-blue-500" title="Verificado" />
                                 )}
                             </div>
                             <Link to="/perfil" className="focus:outline-none">
                                 <ProfileAvatar user={user} />
                             </Link>
-                            <button 
+                            <button
                                 onClick={handleLogout}
                                 className="text-xs text-slate-400 hover:text-red-600 font-semibold transition-colors ml-2"
                             >
@@ -150,16 +154,15 @@ export default function AppLayout({ children }) {
                 const isPropietario = user.rol === 'PROPIETARIO';
                 const tabs = isPropietario
                     ? [
-                        { to: '/filtros',       label: 'Filtros',    Icon: SlidersHorizontal },
-                        { to: '/owner-feed',    label: 'Candidatos', Icon: Users },
-                        { to: '/mis-inmuebles', label: 'Mis Pisos',  Icon: Building2 },
-                        { to: '/matches',       label: 'Matches',    Icon: MessageCircle },
-                        { to: '/calendario',    label: 'Agenda',     Icon: CalendarIcon },
+                        { to: '/owner-feed', label: 'Candidatos', Icon: Users },
+                        { to: '/mis-inmuebles', label: 'Mis Pisos', Icon: Building2 },
+                        { to: '/matches', label: 'Matches', Icon: MessageCircle },
+                        { to: '/calendario', label: 'Agenda', Icon: CalendarIcon },
                     ]
                     : [
-                        { to: '/filtros', label: 'Filtros',   Icon: SlidersHorizontal },
-                        { to: '/feed',    label: 'Descubrir', Icon: Home },
-                        { to: '/matches', label: 'Matches',   Icon: MessageCircle },
+                        { to: '/feed', label: 'Descubrir', Icon: Home },
+                        { to: '/filtros', label: 'Filtros', Icon: SlidersHorizontal },
+                        { to: '/matches', label: 'Matches', Icon: MessageCircle },
                         { to: '/calendario', label: 'Agenda', Icon: CalendarIcon },
                     ];
                 return (

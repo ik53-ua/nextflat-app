@@ -87,40 +87,72 @@ public class FeedService {
 
     public void processSwipe(SwipeRequestDTO request) {
         Usuario usuarioOrigen = usuarioRepository.findById(request.getUsuarioOrigenId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Usuario no encontrado con ID: " + request.getUsuarioOrigenId()));
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         Inmueble inmuebleDestino = inmuebleRepository.findById(request.getInmuebleDestinoId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Inmueble no encontrado con ID: " + request.getInmuebleDestinoId()));
+                .orElseThrow(() -> new IllegalArgumentException("Inmueble no encontrado"));
+
+        // COMPROBACIÓN DE LÍMITE DE SUPER LIKES
+        if (request.isEsSuperLike()) {
+            if (usuarioOrigen.getSuperLikesRestantes() <= 0) {
+                throw new IllegalStateException("Has agotado tus 5 Super Likes diarios.");
+            }
+            // Le restamos uno y guardamos
+            usuarioOrigen.setSuperLikesRestantes(usuarioOrigen.getSuperLikesRestantes() - 1);
+            usuarioRepository.save(usuarioOrigen);
+        }
 
         Interaccion interaccion = new Interaccion();
         interaccion.setUsuarioOrigen(usuarioOrigen);
         interaccion.setInmuebleDestino(inmuebleDestino);
-        // We set target owner of the property
         interaccion.setUsuarioTarget(inmuebleDestino.getPropietario());
         interaccion.setTipo(request.getTipoInteraccion());
+        interaccion.setEsSuperLike(request.isEsSuperLike());
 
         interaccionRepository.save(interaccion);
     }
 
     @org.springframework.transaction.annotation.Transactional
     public FeedInmuebleDTO rewindLastSwipe(Long usuarioId) {
+        // 1. Verificar si el usuario puede hacer Rewind
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (!usuario.isEsPremium()) {
+            if (usuario.getRewindsRestantes() <= 0) {
+                throw new IllegalStateException("Has agotado tus usos diarios para deshacer. ¡Pásate a Premium para usos ilimitados!");
+            }
+            // Descontar un rewind
+            usuario.setRewindsRestantes(usuario.getRewindsRestantes() - 1);
+            usuarioRepository.save(usuario);
+        }
+
+        // 2. Lógica existente...
         Optional<Interaccion> ultimaInteraccionOpt = interaccionRepository
                 .findFirstByUsuarioOrigenIdOrderByFechaDesc(usuarioId);
 
         if (ultimaInteraccionOpt.isEmpty()) {
+            // Si falla, le devolvemos el rewind que le acabamos de quitar
+            if (!usuario.isEsPremium()) {
+                usuario.setRewindsRestantes(usuario.getRewindsRestantes() + 1);
+                usuarioRepository.save(usuario);
+            }
             throw new IllegalStateException("No hay interacciones para deshacer.");
         }
 
         Interaccion ultima = ultimaInteraccionOpt.get();
 
         if ("LIKE".equals(ultima.getTipo().name())) {
+            if (!usuario.isEsPremium()) {
+                usuario.setRewindsRestantes(usuario.getRewindsRestantes() + 1);
+                usuarioRepository.save(usuario);
+            }
             throw new IllegalStateException("Solo puedes deshacer los rechazos (DISLIKE).");
         }
 
         interaccionRepository.delete(ultima);
 
+        // ... El resto del método se queda igual (creación del DTO y return)
         Inmueble inmueble = ultima.getInmuebleDestino();
         FeedInmuebleDTO dto = new FeedInmuebleDTO();
         dto.setId(inmueble.getId());

@@ -88,6 +88,7 @@ public class PropietarioFeedService {
             }
 
             // Recuperar el piso al que dio Like (el más reciente)
+            // Recuperar el piso al que dio Like (el más reciente)
             List<Interaccion> likes = interaccionRepository
                     .findLikesDeCandidatoEnPisosDelPropietario(candidato.getId(), propietarioId);
 
@@ -98,10 +99,17 @@ public class PropietarioFeedService {
                     dto.setInteresadoEnMunicipio(likeReciente.getInmuebleDestino().getMunicipio());
                     dto.setInmuebleInteresadoId(likeReciente.getInmuebleDestino().getId());
                 }
+                
+                // 1. AÑADE ESTO: Mapear si fue Super Like
+                dto.setEsSuperLike(likeReciente.isEsSuperLike());
             }
 
             result.add(dto);
         }
+        
+        // 2. AÑADE ESTO ANTES DEL RETURN: Ordenar para que los VIPs salgan los primeros
+        result.sort((a, b) -> Boolean.compare(b.isEsSuperLike(), a.isEsSuperLike()));
+
         return result;
     }
 

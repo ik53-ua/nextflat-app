@@ -26,6 +26,10 @@ public class Cita {
     @JoinColumn(name = "inmueble_id")
     private Inmueble inmueble;
 
+    private Long creadorId;
+    private Boolean ocultoPropietario = false;
+    private Boolean ocultoInquilino = false;
+
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 

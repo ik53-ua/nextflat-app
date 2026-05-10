@@ -129,6 +129,15 @@ public class UsuarioController {
         return ResponseEntity.notFound().build();
     }
 
+    @PutMapping("/{id}/premium")
+    public ResponseEntity<Usuario> hacerPremium(@PathVariable Long id) {
+        return usuarioRepository.findById(id).map(u -> {
+            u.setEsPremium(true);
+            // Opcional: podrías resetear sus superlikes o rewinds aquí
+            return ResponseEntity.ok(usuarioRepository.save(u));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     // Añadir en la parte superior junto a las inyecciones existentes:
     @Autowired
     private com.ua.nextflat.service.GrupoBusquedaService grupoBusquedaService;

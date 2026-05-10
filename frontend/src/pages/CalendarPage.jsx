@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addWeeks, subWeeks, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, MapPin, Clock, Calendar as CalendarIcon, CheckCircle2, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, Clock, Calendar as CalendarIcon, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -48,6 +48,22 @@ export default function CalendarPage() {
     }
   };
 
+  const handleEliminarDeVista = async (citaId) => {
+    if (!window.confirm("¿Quieres quitar esta cita de tu calendario? La otra persona la seguirá viendo.")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/citas/${citaId}/usuario/${currentUser.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        // La quitamos del estado local para que desaparezca visualmente al momento
+        setCitas(prev => prev.filter(c => c.id !== citaId));
+      }
+    } catch (error) {
+      console.error('Error al ocultar cita:', error);
+    }
+  };
+
   // Calendar logic (Weekly view)
   const startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
   const endDate = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -58,7 +74,7 @@ export default function CalendarPage() {
   };
 
   const getStatusColor = (estado) => {
-    switch(estado) {
+    switch (estado) {
       case 'PENDIENTE': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'CONFIRMADA': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'CANCELADA': return 'bg-rose-100 text-rose-800 border-rose-200';
@@ -69,7 +85,7 @@ export default function CalendarPage() {
 
   return (
     <div className="flex flex-col h-full bg-slate-50/50">
-      
+
       {/* Header */}
       <div className="bg-white border-b border-slate-100 px-6 py-5">
         <div className="flex items-center justify-between max-w-5xl mx-auto">
@@ -80,9 +96,9 @@ export default function CalendarPage() {
             </h1>
             <p className="text-slate-500 mt-1">Gestiona tus visitas y citas programadas</p>
           </div>
-          
+
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => setCurrentDate(subWeeks(currentDate, 1))}
               className="p-2 hover:bg-slate-100 rounded-full transition-colors"
             >
@@ -91,7 +107,7 @@ export default function CalendarPage() {
             <span className="font-semibold text-slate-700 min-w-[120px] text-center capitalize">
               {format(currentDate, 'MMMM yyyy', { locale: es })}
             </span>
-            <button 
+            <button
               onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
               className="p-2 hover:bg-slate-100 rounded-full transition-colors"
             >
@@ -104,7 +120,7 @@ export default function CalendarPage() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto">
-          
+
           {loading ? (
             <div className="flex justify-center py-12">
               <div className="w-10 h-10 border-4 border-[#e8385d] border-t-transparent rounded-full animate-spin"></div>
@@ -133,8 +149,8 @@ export default function CalendarPage() {
                     <div key={day.toISOString()} className="p-2 border-r border-slate-100 last:border-r-0 min-h-[120px]">
                       <div className="space-y-2">
                         {dayCitas.map(cita => (
-                          <div 
-                            key={cita.id} 
+                          <div
+                            key={cita.id}
                             className={`p-3 rounded-xl border ${getStatusColor(cita.estado)} shadow-sm relative group`}
                           >
                             <div className="flex items-center gap-1 mb-1">
@@ -153,17 +169,17 @@ export default function CalendarPage() {
                               </div>
                             )}
 
-                            {/* Propietario Actions (Confirm/Reject) */}
-                            {userRol === 'PROPIETARIO' && cita.estado === 'PENDIENTE' && (
+                            {/* Acciones para el que RECIBE la solicitud (NO es el creador) */}
+                            {cita.creadorId && cita.creadorId !== currentUser.id && cita.estado === 'PENDIENTE' && (
                               <div className="absolute -bottom-8 left-0 right-0 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                <button 
+                                <button
                                   onClick={() => handleEstadoChange(cita.id, 'CONFIRMADA')}
                                   className="bg-emerald-500 text-white p-1.5 rounded-full hover:bg-emerald-600 shadow-md"
                                   title="Confirmar"
                                 >
                                   <CheckCircle2 size={16} />
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleEstadoChange(cita.id, 'CANCELADA')}
                                   className="bg-rose-500 text-white p-1.5 rounded-full hover:bg-rose-600 shadow-md"
                                   title="Rechazar"
@@ -172,11 +188,11 @@ export default function CalendarPage() {
                                 </button>
                               </div>
                             )}
-                            
-                            {/* Inquilino Cancel Action */}
-                            {userRol === 'INQUILINO' && (cita.estado === 'PENDIENTE' || cita.estado === 'CONFIRMADA') && (
+
+                            {/* Acción de Cancelar (Para el CREADOR si está pendiente, o para AMBOS si ya está confirmada) */}
+                            {((cita.creadorId === currentUser.id && cita.estado === 'PENDIENTE') || cita.estado === 'CONFIRMADA') && (
                               <div className="absolute -bottom-8 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                <button 
+                                <button
                                   onClick={() => handleEstadoChange(cita.id, 'CANCELADA')}
                                   className="bg-rose-500 text-white px-2 py-1 text-xs rounded-full hover:bg-rose-600 shadow-md"
                                 >
@@ -184,6 +200,20 @@ export default function CalendarPage() {
                                 </button>
                               </div>
                             )}
+
+                            {/* NUEVO: Papelera si la cita ya está CANCELADA */}
+                            {cita.estado === 'CANCELADA' && (
+                              <div className="absolute -bottom-8 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <button
+                                  onClick={() => handleEliminarDeVista(cita.id)}
+                                  className="bg-slate-500 text-white p-1.5 rounded-full hover:bg-slate-600 shadow-md"
+                                  title="Quitar de mi vista"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            )}
+
                           </div>
                         ))}
                         {dayCitas.length === 0 && (
@@ -201,35 +231,86 @@ export default function CalendarPage() {
           <div className="mt-8">
             <h3 className="text-lg font-bold text-slate-800 mb-4">Próximas Citas</h3>
             <div className="space-y-3">
-              {citas.filter(c => parseISO(c.fechaHora) >= new Date() && c.estado !== 'CANCELADA').length === 0 ? (
+              {/* Hemos quitado el && c.estado !== 'CANCELADA' para que se puedan ver y borrar */}
+              {citas.filter(c => parseISO(c.fechaHora) >= new Date()).length === 0 ? (
                 <p className="text-slate-500 text-sm">No tienes citas próximas programadas.</p>
               ) : (
                 citas
-                  .filter(c => parseISO(c.fechaHora) >= new Date() && c.estado !== 'CANCELADA')
-                  .sort((a,b) => new Date(a.fechaHora) - new Date(b.fechaHora))
-                  .slice(0,5)
+                  .filter(c => parseISO(c.fechaHora) >= new Date())
+                  .sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora))
+                  .slice(0, 5)
                   .map(cita => (
-                  <div key={`list-${cita.id}`} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center ${getStatusColor(cita.estado).replace('border', '')}`}>
-                        <span className="text-xs font-bold">{format(parseISO(cita.fechaHora), 'd')}</span>
-                        <span className="text-[10px] uppercase">{format(parseISO(cita.fechaHora), 'MMM', {locale: es})}</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-800">
-                          Visita con {userRol === 'PROPIETARIO' ? cita.inquilinoNombre : cita.propietarioNombre}
-                        </p>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-slate-500 flex items-center gap-1"><Clock size={12}/> {format(parseISO(cita.fechaHora), 'HH:mm')}</span>
-                          {cita.inmuebleDireccion && <span className="text-xs text-slate-500 flex items-center gap-1 truncate max-w-[200px]"><MapPin size={12}/> {cita.inmuebleDireccion}</span>}
+                    <div key={`list-${cita.id}`} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center flex-shrink-0 ${getStatusColor(cita.estado).replace('border', '')}`}>
+                          <span className="text-xs font-bold">{format(parseISO(cita.fechaHora), 'd')}</span>
+                          <span className="text-[10px] uppercase">{format(parseISO(cita.fechaHora), 'MMM', { locale: es })}</span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-800">
+                            Visita con {userRol === 'PROPIETARIO' ? cita.inquilinoNombre : cita.propietarioNombre}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-slate-500">
+                            <span className="text-xs flex items-center gap-1"><Clock size={12} /> {format(parseISO(cita.fechaHora), 'HH:mm')}</span>
+                            {cita.inmuebleDireccion && <span className="text-xs flex items-center gap-1 truncate max-w-[150px] sm:max-w-[200px]"><MapPin size={12} /> {cita.inmuebleDireccion}</span>}
+                          </div>
                         </div>
                       </div>
+
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0">
+                        {/* Estado actual siempre visible */}
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(cita.estado)}`}>
+                          {cita.estado}
+                        </span>
+
+                        {/* NUEVO: Botón para eliminar de MI vista si está CANCELADA */}
+                        {cita.estado === 'CANCELADA' && (
+                          <button
+                            onClick={() => handleEliminarDeVista(cita.id)}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar de mi calendario"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+
+                        {/* BOTONES DE ACCIÓN: Solo si la cita tiene un creadorId válido */}
+                        {cita.creadorId && (
+                          <div className="flex items-center gap-2">
+                            {/* 1. Si NO eres el creador y está PENDIENTE -> Puedes Confirmar o Rechazar */}
+                            {cita.creadorId !== currentUser.id && cita.estado === 'PENDIENTE' && (
+                              <>
+                                <button
+                                  onClick={() => handleEstadoChange(cita.id, 'CONFIRMADA')}
+                                  className="bg-emerald-500 text-white p-2 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm"
+                                  title="Confirmar"
+                                >
+                                  <CheckCircle2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleEstadoChange(cita.id, 'CANCELADA')}
+                                  className="bg-rose-500 text-white p-2 rounded-lg hover:bg-rose-600 transition-colors shadow-sm"
+                                  title="Rechazar"
+                                >
+                                  <XCircle size={16} />
+                                </button>
+                              </>
+                            )}
+
+                            {/* 2. Si ERES el creador y está PENDIENTE, o si ya está CONFIRMADA (ambos) -> Puedes Cancelar */}
+                            {((cita.creadorId === currentUser.id && cita.estado === 'PENDIENTE') || cita.estado === 'CONFIRMADA') && (
+                              <button
+                                onClick={() => handleEstadoChange(cita.id, 'CANCELADA')}
+                                className="text-xs font-bold text-rose-500 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-lg transition-colors border border-rose-100"
+                              >
+                                Cancelar
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(cita.estado)}`}>
-                      {cita.estado}
-                    </span>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           </div>

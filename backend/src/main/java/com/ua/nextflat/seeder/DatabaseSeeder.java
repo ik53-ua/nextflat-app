@@ -125,7 +125,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                 inquilino.setEmail("inquilino" + i + "@nextflat.com");
                 inquilino.setPassword("password123");
                 inquilino.setRol(RolUsuario.INQUILINO);
-                inquilino.setEstadoVerificacion(com.ua.nextflat.model.enums.EstadoVerificacion.VERIFICADO);
                 inquilino.setFechaNacimiento(LocalDate.now().minusYears(faker.number().numberBetween(18, 50)));
 
                 if (i == 1) {
