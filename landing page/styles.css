@@ -1,9 +1,12 @@
 :root {
-    --bg-color: #080B12; /* Deep dark background */
+    /* Nuevos colores extraídos del logo */
+    --brand-blue: #0056b3; /* Azul del contorno de la casa */
+    --brand-pink: #e91e63; /* Rosa del corazón/flecha */
+    --bg-color: #080B12;
     --text-primary: #ffffff;
     --text-secondary: #94A3B8;
-    --accent-green: #00E676; /* Tinder-like heart action color */
-    --accent-red: #FF4B4B; /* Reject action color */
+    --accent-green: #00E676; /* Mantenemos para acciones positivas */
+    --accent-red: #FF4B4B;
     --glass-bg: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(255, 255, 255, 0.08);
 }
@@ -58,22 +61,18 @@ a {
 }
 
 .logo {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+}
+
+.logo-img {
+    height: 120px; /* Ajusta según prefieras el tamaño */
+    width: auto;
+    filter: drop-shadow(0 0 10px rgba(0, 86, 179, 0.2)); /* Brillo sutil azul */
 }
 
 .logo::before {
-    content: '';
-    display: inline-block;
-    width: 28px;
-    height: 28px;
-    background: linear-gradient(135deg, var(--accent-green), #00B0FF);
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);
+    display: none;
 }
 
 /* Buttons */
@@ -144,14 +143,9 @@ a {
 }
 
 .gradient-text {
-    font-size: 4.5rem;
-    line-height: 1.1;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(to right, #ffffff, #a5b4fc);
+    background: linear-gradient(to right, #ffffff, var(--brand-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-weight: 800;
-    letter-spacing: -1.5px;
 }
 
 .hero h2 {
@@ -367,12 +361,12 @@ section {
 }
 
 .solution.glass {
-    background: linear-gradient(135deg, rgba(0, 230, 118, 0.05), rgba(255,255,255,0.02));
-    border: 1px solid rgba(0, 230, 118, 0.2);
+    border: 1px solid rgba(233, 30, 99, 0.3); /* Borde rosado suave */
+    background: linear-gradient(135deg, rgba(233, 30, 99, 0.05), rgba(255,255,255,0.02));
 }
 
 .solution h3 {
-    color: var(--accent-green);
+    color: var(--brand-pink);
 }
 
 /* Features */
