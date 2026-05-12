@@ -6,6 +6,7 @@ import com.ua.nextflat.model.Interaccion;
 import com.ua.nextflat.model.Usuario;
 import com.ua.nextflat.repository.InteraccionRepository;
 import com.ua.nextflat.repository.UsuarioRepository;
+import com.ua.nextflat.repository.PermisosGestionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,16 +24,19 @@ public class PropietarioFeedService {
     private final UsuarioRepository usuarioRepository;
     private final com.ua.nextflat.repository.MatchRepository matchRepository;
     private final com.ua.nextflat.repository.ChatRepository chatRepository;
+    private final PermisosGestionRepository permisosGestionRepository; // Inyección añadida
 
     @Autowired
     public PropietarioFeedService(InteraccionRepository interaccionRepository,
                                   UsuarioRepository usuarioRepository,
                                   com.ua.nextflat.repository.MatchRepository matchRepository,
-                                  com.ua.nextflat.repository.ChatRepository chatRepository) {
+                                  com.ua.nextflat.repository.ChatRepository chatRepository,
+                                  PermisosGestionRepository permisosGestionRepository) { // Inyección añadida
         this.interaccionRepository = interaccionRepository;
         this.usuarioRepository = usuarioRepository;
         this.matchRepository = matchRepository;
         this.chatRepository = chatRepository;
+        this.permisosGestionRepository = permisosGestionRepository;
     }
 
     /**
@@ -42,7 +46,7 @@ public class PropietarioFeedService {
         List<Usuario> candidatos = interaccionRepository.findCandidatosParaPropietario(propietarioId);
         
         List<CandidatoFeedDTO> result = new ArrayList<>();
-        Set<Long> gruposProcesados = new HashSet<>(); // Para no meter el mismo grupo dos veces
+        Set<Long> gruposProcesados = new HashSet<>(); 
 
         for (Usuario candidato : candidatos) {
             CandidatoFeedDTO dto = new CandidatoFeedDTO();
@@ -51,16 +55,14 @@ public class PropietarioFeedService {
             if (candidato.getGrupo() != null) {
                 Long grupoId = candidato.getGrupo().getId();
                 
-                // Si ya empaquetamos a este grupo por el otro compañero, lo saltamos
                 if (gruposProcesados.contains(grupoId)) continue;
                 gruposProcesados.add(grupoId);
 
-                // Buscamos a todos los miembros de este grupo
                 List<Usuario> miembros = usuarioRepository.findByGrupoId(grupoId);
                 
-                dto.setId(candidato.getId()); // Usamos el ID del primero para el Swipe
+                dto.setId(candidato.getId()); 
                 dto.setEsGrupo(true);
-                dto.setBio(candidato.getBio()); // Usamos la bio del que dio Like
+                dto.setBio(candidato.getBio()); 
                 
                 List<CandidatoFeedDTO.UsuarioGrupoDTO> usuariosGrupo = new ArrayList<>();
                 for (Usuario miembro : miembros) {
@@ -68,6 +70,7 @@ public class PropietarioFeedService {
                     miniDto.setId(miembro.getId());
                     miniDto.setNombre(miembro.getNombre());
                     miniDto.setFotoPerfil(miembro.getFotoPerfil());
+                    miniDto.setProfesion(miembro.getProfesion());
                     if (miembro.getFechaNacimiento() != null) {
                         miniDto.setEdad(Period.between(miembro.getFechaNacimiento(), LocalDate.now()).getYears());
                     }
@@ -87,8 +90,6 @@ public class PropietarioFeedService {
                 }
             }
 
-            // Recuperar el piso al que dio Like (el más reciente)
-            // Recuperar el piso al que dio Like (el más reciente)
             List<Interaccion> likes = interaccionRepository
                     .findLikesDeCandidatoEnPisosDelPropietario(candidato.getId(), propietarioId);
 
@@ -99,22 +100,19 @@ public class PropietarioFeedService {
                     dto.setInteresadoEnMunicipio(likeReciente.getInmuebleDestino().getMunicipio());
                     dto.setInmuebleInteresadoId(likeReciente.getInmuebleDestino().getId());
                 }
-                
-                // 1. AÑADE ESTO: Mapear si fue Super Like
                 dto.setEsSuperLike(likeReciente.isEsSuperLike());
             }
 
             result.add(dto);
         }
         
-        // 2. AÑADE ESTO ANTES DEL RETURN: Ordenar para que los VIPs salgan los primeros
         result.sort((a, b) -> Boolean.compare(b.isEsSuperLike(), a.isEsSuperLike()));
 
         return result;
     }
 
     /**
-     * US-014: Swipe Atómico. Aplica el LIKE/DISLIKE a todos los miembros del grupo.
+     * US-014 / US-015: Swipe Atómico y Lógica de Delegados
      */
     public void processSwipePropietario(SwipeCandidatoRequestDTO request) {
         Usuario propietario = usuarioRepository.findById(request.getPropietarioId())
@@ -123,45 +121,69 @@ public class PropietarioFeedService {
         Usuario candidatoPrincipal = usuarioRepository.findById(request.getCandidatoId())
                 .orElseThrow(() -> new IllegalArgumentException("Candidato no encontrado"));
 
-        // --- LÓGICA US-014: OBTENER A TODOS LOS AFECTADOS ---
         List<Usuario> usuariosAfectados = new ArrayList<>();
         if (candidatoPrincipal.getGrupo() != null) {
             usuariosAfectados.addAll(usuarioRepository.findByGrupoId(candidatoPrincipal.getGrupo().getId()));
         } else {
-            usuariosAfectados.add(candidatoPrincipal); // Va solo
+            usuariosAfectados.add(candidatoPrincipal); 
         }
 
-        // Recuperar el inmueble que le gustó al candidato originalmente (para hacer el Match)
+        // Recuperar el inmueble que le gustó al candidato originalmente
         List<Interaccion> likesAnteriores = interaccionRepository
                 .findLikesDeCandidatoEnPisosDelPropietario(candidatoPrincipal.getId(), propietario.getId());
         com.ua.nextflat.model.Inmueble inmuebleVinculado = likesAnteriores.isEmpty() ? null : likesAnteriores.get(0).getInmuebleDestino();
 
-        // Aplicar la acción a TODOS simultáneamente
-        for (Usuario afectado : usuariosAfectados) {
+        Usuario realPropietario = propietario; 
+
+        // Si el que está haciendo Swipe es un DELEGADO
+        if (propietario.getRol() == com.ua.nextflat.model.enums.RolUsuario.DELEGADO) {
+            com.ua.nextflat.model.PermisosGestion permiso = permisosGestionRepository
+                .findByInquilinoGestorIdAndActivoTrue(propietario.getId())
+                .stream().findFirst().orElseThrow(() -> new IllegalStateException("Delegado sin permisos activos"));
             
-            // 1. Guardar Interacción
+            realPropietario = permiso.getPropietario();
+            inmuebleVinculado = permiso.getInmueble();
+        }
+
+        // 1. APLICAR LA INTERACCIÓN A TODOS (Para que no vuelvan a salir en el feed)
+        for (Usuario afectado : usuariosAfectados) {
             Interaccion interaccion = new Interaccion();
-            interaccion.setUsuarioOrigen(propietario);
+            interaccion.setUsuarioOrigen(realPropietario); // El Match siempre es a nombre del dueño real
             interaccion.setUsuarioTarget(afectado);
             interaccion.setInmuebleDestino(null);
             interaccion.setTipo(request.getTipoInteraccion());
             interaccionRepository.save(interaccion);
+        }
 
-            // 2. Si es LIKE, generar Match y Chat para cada uno
-            if (request.getTipoInteraccion() == com.ua.nextflat.model.enums.TipoInteraccion.LIKE && inmuebleVinculado != null) {
-                
-                com.ua.nextflat.model.Match nuevoMatch = new com.ua.nextflat.model.Match();
-                nuevoMatch.setPropietario(propietario);
-                nuevoMatch.setInquilino(afectado);
-                nuevoMatch.setInmueble(inmuebleVinculado);
-                com.ua.nextflat.model.Match savedMatch = matchRepository.save(nuevoMatch);
+        // 2. CREAR EL MATCH Y CHAT (UNA SOLA VEZ, FUERA DEL BUCLE)
+        if (request.getTipoInteraccion() == com.ua.nextflat.model.enums.TipoInteraccion.LIKE && inmuebleVinculado != null) {
+            
+            com.ua.nextflat.model.Match nuevoMatch = new com.ua.nextflat.model.Match();
+            nuevoMatch.setPropietario(realPropietario);
+            nuevoMatch.setInquilino(candidatoPrincipal); // SOLO 1 MATCH REPRESENTATIVO
+            nuevoMatch.setInmueble(inmuebleVinculado);
+            com.ua.nextflat.model.Match savedMatch = matchRepository.save(nuevoMatch);
 
-                com.ua.nextflat.model.Chat nuevoChat = new com.ua.nextflat.model.Chat();
-                nuevoChat.setMatchVinculado(savedMatch);
+            com.ua.nextflat.model.Chat nuevoChat = new com.ua.nextflat.model.Chat();
+            nuevoChat.setMatchVinculado(savedMatch);
+            
+            boolean esGrupo = candidatoPrincipal.getGrupo() != null;
+            boolean esDelegado = propietario.getRol() == com.ua.nextflat.model.enums.RolUsuario.DELEGADO;
+
+            if (esDelegado && esGrupo) {
+                nuevoChat.setNombreGrupo("Chat Grupal (Delegado): " + inmuebleVinculado.getDireccion());
+                nuevoChat.setEsGrupal(true); 
+            } else if (esDelegado) {
+                nuevoChat.setNombreGrupo("Chat (Delegado): " + inmuebleVinculado.getDireccion());
+                nuevoChat.setEsGrupal(true); 
+            } else if (esGrupo) {
+                nuevoChat.setNombreGrupo("Chat Grupal: " + inmuebleVinculado.getDireccion());
+                nuevoChat.setEsGrupal(true);
+            } else {
                 nuevoChat.setNombreGrupo("Chat: " + inmuebleVinculado.getDireccion());
-                nuevoChat.setEsGrupal(false); // Podría ser true en el futuro si soportáis chats grupales
-                chatRepository.save(nuevoChat);
+                nuevoChat.setEsGrupal(false); 
             }
+            chatRepository.save(nuevoChat);
         }
     }
 }

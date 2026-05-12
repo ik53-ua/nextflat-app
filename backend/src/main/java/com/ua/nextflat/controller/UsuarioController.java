@@ -24,6 +24,9 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+    @Autowired
+    private com.ua.nextflat.repository.PermisosGestionRepository permisosGestionRepository;
+
     @PostMapping("/registro")
     public ResponseEntity<?> registrarUsuario(@RequestBody Usuario nuevoUsuario) {
         try {
@@ -38,6 +41,12 @@ public class UsuarioController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error en el registro: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/{id}/es-gestor")
+    public ResponseEntity<java.util.Map<String, Boolean>> isGestor(@PathVariable Long id) {
+        boolean esGestor = permisosGestionRepository.existsByInquilinoGestorIdAndActivoTrue(id);
+        return ResponseEntity.ok(java.util.Map.of("esGestor", esGestor));
     }
 
     @PostMapping("/login")

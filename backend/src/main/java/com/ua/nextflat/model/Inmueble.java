@@ -45,4 +45,8 @@ public class Inmueble {
     private LocalDateTime createdAt;
     @Transient
     private String fotoPrincipal;
+
+    @Transient
+    private java.util.List<java.util.Map<String, Object>> gestores;
+
 }

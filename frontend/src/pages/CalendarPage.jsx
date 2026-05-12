@@ -169,8 +169,8 @@ export default function CalendarPage() {
                               </div>
                             )}
 
-                            {/* Acciones para el que RECIBE la solicitud (NO es el creador) */}
-                            {cita.creadorId && cita.creadorId !== currentUser.id && cita.estado === 'PENDIENTE' && (
+                            {/* Acciones para el que RECIBE la solicitud (Solo si NO eres Delegado) */}
+                            {userRol !== 'DELEGADO' && cita.creadorId && cita.creadorId !== currentUser.id && cita.estado === 'PENDIENTE' && (
                               <div className="absolute -bottom-8 left-0 right-0 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                 <button
                                   onClick={() => handleEstadoChange(cita.id, 'CONFIRMADA')}
@@ -189,8 +189,8 @@ export default function CalendarPage() {
                               </div>
                             )}
 
-                            {/* Acción de Cancelar (Para el CREADOR si está pendiente, o para AMBOS si ya está confirmada) */}
-                            {((cita.creadorId === currentUser.id && cita.estado === 'PENDIENTE') || cita.estado === 'CONFIRMADA') && (
+                            {/* Acción de Cancelar (Solo si NO eres Delegado) */}
+                            {userRol !== 'DELEGADO' && ((cita.creadorId === currentUser.id && cita.estado === 'PENDIENTE') || cita.estado === 'CONFIRMADA') && (
                               <div className="absolute -bottom-8 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                 <button
                                   onClick={() => handleEstadoChange(cita.id, 'CANCELADA')}
@@ -201,8 +201,8 @@ export default function CalendarPage() {
                               </div>
                             )}
 
-                            {/* NUEVO: Papelera si la cita ya está CANCELADA */}
-                            {cita.estado === 'CANCELADA' && (
+                            {/* Papelera si la cita ya está CANCELADA (Solo si NO eres Delegado) */}
+                            {userRol !== 'DELEGADO' && cita.estado === 'CANCELADA' && (
                               <div className="absolute -bottom-8 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                 <button
                                   onClick={() => handleEliminarDeVista(cita.id)}
@@ -231,7 +231,6 @@ export default function CalendarPage() {
           <div className="mt-8">
             <h3 className="text-lg font-bold text-slate-800 mb-4">Próximas Citas</h3>
             <div className="space-y-3">
-              {/* Hemos quitado el && c.estado !== 'CANCELADA' para que se puedan ver y borrar */}
               {citas.filter(c => parseISO(c.fechaHora) >= new Date()).length === 0 ? (
                 <p className="text-slate-500 text-sm">No tienes citas próximas programadas.</p>
               ) : (
@@ -263,8 +262,8 @@ export default function CalendarPage() {
                           {cita.estado}
                         </span>
 
-                        {/* NUEVO: Botón para eliminar de MI vista si está CANCELADA */}
-                        {cita.estado === 'CANCELADA' && (
+                        {/* Botón para eliminar de MI vista si está CANCELADA (Solo si NO eres Delegado) */}
+                        {userRol !== 'DELEGADO' && cita.estado === 'CANCELADA' && (
                           <button
                             onClick={() => handleEliminarDeVista(cita.id)}
                             className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -274,10 +273,10 @@ export default function CalendarPage() {
                           </button>
                         )}
 
-                        {/* BOTONES DE ACCIÓN: Solo si la cita tiene un creadorId válido */}
-                        {cita.creadorId && (
+                        {/* BOTONES DE ACCIÓN: (Solo si NO eres Delegado) */}
+                        {userRol !== 'DELEGADO' && cita.creadorId && (
                           <div className="flex items-center gap-2">
-                            {/* 1. Si NO eres el creador y está PENDIENTE -> Puedes Confirmar o Rechazar */}
+                            {/* 1. Si NO eres el creador y está PENDIENTE */}
                             {cita.creadorId !== currentUser.id && cita.estado === 'PENDIENTE' && (
                               <>
                                 <button
@@ -297,7 +296,7 @@ export default function CalendarPage() {
                               </>
                             )}
 
-                            {/* 2. Si ERES el creador y está PENDIENTE, o si ya está CONFIRMADA (ambos) -> Puedes Cancelar */}
+                            {/* 2. Si ERES el creador y está PENDIENTE, o si ya está CONFIRMADA */}
                             {((cita.creadorId === currentUser.id && cita.estado === 'PENDIENTE') || cita.estado === 'CONFIRMADA') && (
                               <button
                                 onClick={() => handleEstadoChange(cita.id, 'CANCELADA')}

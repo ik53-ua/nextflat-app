@@ -6,4 +6,5 @@ import lombok.Data;
 public class ChatDTO {
     private Long id;
     private Long matchId;
+    private Long inmuebleId;
 }

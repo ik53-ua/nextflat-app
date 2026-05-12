@@ -31,6 +31,7 @@ public class ChatController {
         ChatDTO dto = new ChatDTO();
         dto.setId(chat.getId());
         dto.setMatchId(chat.getMatchVinculado().getId());
+        dto.setInmuebleId(chat.getMatchVinculado().getInmueble().getId());
         return ResponseEntity.ok(dto);
     }
 

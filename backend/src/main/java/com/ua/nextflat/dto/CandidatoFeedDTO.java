@@ -36,6 +36,7 @@ public class CandidatoFeedDTO {
         private String nombre;
         private Integer edad;
         private String fotoPerfil;
+        private String profesion;
     }
 
 }

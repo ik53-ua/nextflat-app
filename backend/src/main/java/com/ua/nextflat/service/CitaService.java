@@ -28,6 +28,9 @@ public class CitaService {
     @Autowired
     private InmuebleRepository inmuebleRepository;
 
+    @Autowired
+    private com.ua.nextflat.repository.PermisosGestionRepository permisosGestionRepository;
+
     public CitaDTO crearCita(NuevaCitaDTO request) {
         Usuario propietario = usuarioRepository.findById(request.getPropietarioId())
                 .orElseThrow(() -> new IllegalArgumentException("Propietario no encontrado"));
@@ -59,19 +62,36 @@ public class CitaService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
                 
-        List<Cita> citas;
         if (usuario.getRol() == RolUsuario.PROPIETARIO) {
-            citas = citaRepository.findByPropietarioIdOrderByFechaHoraAsc(usuarioId);
-            // FILTRAR: Solo las que el propietario NO ha ocultado
+            List<Cita> citas = citaRepository.findByPropietarioIdOrderByFechaHoraAsc(usuarioId);
             return citas.stream()
                 .filter(c -> c.getOcultoPropietario() == null || !c.getOcultoPropietario())
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+                
         } else if (usuario.getRol() == RolUsuario.INQUILINO) {
-            citas = citaRepository.findByInquilinoIdOrderByFechaHoraAsc(usuarioId);
-            // FILTRAR: Solo las que el inquilino NO ha ocultado
+            List<Cita> citas;
+            if (usuario.getGrupo() != null) {
+                // Si está en grupo, carga las citas de CUALQUIERA del grupo
+                List<Usuario> miembros = usuarioRepository.findByGrupoId(usuario.getGrupo().getId());
+                List<Long> memberIds = miembros.stream().map(Usuario::getId).collect(Collectors.toList());
+                citas = citaRepository.findByInquilinoIdInOrderByFechaHoraAsc(memberIds);
+            } else {
+                citas = citaRepository.findByInquilinoIdOrderByFechaHoraAsc(usuarioId);
+            }
+            
             return citas.stream()
                 .filter(c -> c.getOcultoInquilino() == null || !c.getOcultoInquilino())
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+                
+        } else if (usuario.getRol() == RolUsuario.DELEGADO) {
+            // El delegado ve las citas de sus inmuebles asignados
+            List<com.ua.nextflat.model.PermisosGestion> permisos = 
+                permisosGestionRepository.findByInquilinoGestorIdAndActivoTrue(usuarioId);
+                
+            return permisos.stream()
+                .flatMap(p -> citaRepository.findByInmuebleIdOrderByFechaHoraAsc(p.getInmueble().getId()).stream())
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
         } else {
@@ -79,7 +99,6 @@ public class CitaService {
         }
     }
 
-    // AÑADIR ESTE MÉTODO:
     public void ocultarCitaParaUsuario(Long citaId, Long usuarioId) {
         Cita cita = citaRepository.findById(citaId)
                 .orElseThrow(() -> new IllegalArgumentException("Cita no encontrada"));

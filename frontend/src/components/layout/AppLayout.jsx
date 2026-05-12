@@ -4,7 +4,6 @@ import { Home, MessageCircle, SlidersHorizontal, Users, Building2, BadgeCheck, A
 
 // Profile Avatar
 function ProfileAvatar({ user }) {
-    const isPropietario = user.rol === 'PROPIETARIO';
     const initial = user.nombre?.charAt(0)?.toUpperCase() || '?';
 
     if (user.fotoPerfil) {
@@ -28,13 +27,12 @@ function ProfileAvatar({ user }) {
     );
 }
 
-// Bottom Tab Item — defined outside to stay pure (tabs array is now role-dynamic)
+// Bottom Tab Item
 function BottomTab({ to, label, Icon, activeAlso }) {
     return (
         <NavLink
             to={to}
             className={({ isActive }) => {
-                // also highlight when on a related sub-route (activeAlso list)
                 const extraActive = activeAlso?.some(path => window.location.pathname.startsWith(path));
                 return `flex flex-col items-center justify-center flex-1 py-2 transition-colors duration-200 ${isActive || extraActive
                     ? 'text-[#e8385d]'
@@ -54,7 +52,7 @@ export default function AppLayout({ children }) {
     const location = useLocation();
     const [toastDenegado, setToastDenegado] = useState(false);
 
-    // Rutas en las que ocultamos el header y la nav inferior (vistas de detalle inmersivas)
+    // Rutas en las que ocultamos el header y la nav inferior
     const isDetailPage = location.pathname.startsWith('/property/') || location.pathname.startsWith('/candidato/');
 
     useEffect(() => {
@@ -65,18 +63,16 @@ export default function AppLayout({ children }) {
         }
     }, [location]);
 
-    // Recuperamos los datos del usuario logueado
     const usuarioGuardado = localStorage.getItem('usuarioLogueado');
     const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
 
-    // Función para cerrar la sesión
     const handleLogout = () => {
         localStorage.removeItem('usuarioLogueado');
-        navigate('/login'); // Forzamos la redirección al login
+        navigate('/login');
     };
 
-    const isPropietario = user?.rol === 'PROPIETARIO';
-    const homeRoute = isPropietario ? '/owner-feed' : '/feed';
+    // CAMBIO 1: El enlace del logo "NextFlat" lleva al feed correspondiente
+    const homeRoute = (user?.rol === 'PROPIETARIO' || user?.rol === 'DELEGADO') ? '/owner-feed' : '/feed';
 
     return (
         <div className="h-screen w-full flex flex-col bg-slate-50 overflow-hidden">
@@ -90,7 +86,6 @@ export default function AppLayout({ children }) {
                     {user ? (
                         <>
                             <div className="flex items-center gap-1 hidden sm:flex">
-                                {/* Si es premium, aplicamos un gradiente dorado, si no, gris normal */}
                                 <span className={`text-sm ${user.esPremium
                                     ? 'font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-amber-500'
                                     : 'font-medium text-slate-700'
@@ -98,12 +93,10 @@ export default function AppLayout({ children }) {
                                     {user.nombre}
                                 </span>
 
-                                {/* Corona si es Premium */}
                                 {user.esPremium && (
                                     <span className="text-xs mr-0.5 animate-pulse" title="Usuario Premium"></span>
                                 )}
 
-                                {/* Badge azul si está verificado */}
                                 {user.estadoVerificacion === 'VERIFICADO' && (
                                     <BadgeCheck className="w-4 h-4 text-blue-500" title="Verificado" />
                                 )}
@@ -131,9 +124,7 @@ export default function AppLayout({ children }) {
                 </div>
             </header>}
 
-            {/* Page Content */}
             <main className="flex-1 relative overflow-auto">
-                {/* Toast de verificación denegada */}
                 {toastDenegado && (
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300 w-[90%] max-w-sm">
                         <div className="bg-red-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-start gap-3">
@@ -150,21 +141,32 @@ export default function AppLayout({ children }) {
                 {children}
             </main>
 
+            {/* CAMBIO 2: Lógica de 3 caminos para los botones del footer */}
             {!isDetailPage && user && user.rol !== 'SUPERVISOR' && (() => {
-                const isPropietario = user.rol === 'PROPIETARIO';
-                const tabs = isPropietario
-                    ? [
+                let tabs = [];
+
+                if (user.rol === 'PROPIETARIO') {
+                    tabs = [
                         { to: '/owner-feed', label: 'Candidatos', Icon: Users },
                         { to: '/mis-inmuebles', label: 'Mis Pisos', Icon: Building2 },
                         { to: '/matches', label: 'Matches', Icon: MessageCircle },
                         { to: '/calendario', label: 'Agenda', Icon: CalendarIcon },
-                    ]
-                    : [
+                    ];
+                } else if (user.rol === 'DELEGADO') {
+                    tabs = [
+                        { to: '/owner-feed', label: 'Candidatos', Icon: Users },
+                        { to: '/matches', label: 'Matches', Icon: MessageCircle },
+                        { to: '/calendario', label: 'Agenda', Icon: CalendarIcon },
+                    ];
+                } else {
+                    tabs = [
                         { to: '/feed', label: 'Descubrir', Icon: Home },
                         { to: '/filtros', label: 'Filtros', Icon: SlidersHorizontal },
                         { to: '/matches', label: 'Matches', Icon: MessageCircle },
                         { to: '/calendario', label: 'Agenda', Icon: CalendarIcon },
                     ];
+                }
+
                 return (
                     <nav className="flex bg-white border-t border-slate-200 z-20 safe-area-bottom">
                         {tabs.map(tab => (

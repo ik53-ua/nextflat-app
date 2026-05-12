@@ -50,11 +50,17 @@ export default function TenantFeed() {
     esCompartido: null,
   });
 
+  // 1. Primero leemos del localStorage
   const usuarioGuardado = localStorage.getItem("usuarioLogueado");
-  const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
-  const userId = currentUser ? currentUser.id : null;
 
-  // Un perfil se considera completo si tiene foto, profesión y biografía
+  // 2. Luego definimos currentUser
+  const currentUser = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+
+  // 3. AHORA SÍ podemos sacar el ID y el Rol, porque currentUser ya existe
+  const userId = currentUser ? currentUser.id : null;
+  const userRol = currentUser?.rol || null;
+
+  // 4. Y después la comprobación del perfil completo
   const isProfileComplete = currentUser &&
     currentUser.fotoPerfil &&
     currentUser.profesion &&
@@ -86,7 +92,7 @@ export default function TenantFeed() {
               ? dbFlat.fotos
               : ["https://via.placeholder.com/800x600?text=Sin+Foto"],
         }));
-        setFlats(formattedFlats);
+        setFlats(Array.from(new Map(formattedFlats.map(item => [item.id, item])).values()));
       } else {
         setFlats([]);
       }
@@ -109,6 +115,12 @@ export default function TenantFeed() {
       setShowFilters(false);
     }
   }, [location]);
+
+  useEffect(() => {
+    if (userRol === 'PROPIETARIO' || userRol === 'DELEGADO') {
+      navigate('/owner-feed', { replace: true });
+    }
+  }, [userRol, navigate]);
 
   const handleCloseModal = () => {
     navigate('/feed');

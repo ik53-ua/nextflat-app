@@ -176,3 +176,18 @@ export const checkYaValorado = async (autorId, destinoId) => {
   const response = await api.get('/valoraciones/check', { params: { autorId, destinoId } });
   return response.data.yaValorado; // boolean
 };
+
+export const delegarInmueble = async (inmuebleId, email) => {
+  const response = await api.post(`/inmuebles/${inmuebleId}/delegar`, { email });
+  return response.data;
+};
+
+export const checkIsGestor = async (usuarioId) => {
+  const response = await api.get(`/usuarios/${usuarioId}/es-gestor`);
+  return response.data.esGestor; // devuelve true o false
+};
+
+export const quitarGestorInmueble = async (inmuebleId, gestorId) => {
+  const response = await api.delete(`/inmuebles/${inmuebleId}/delegar/${gestorId}`);
+  return response.data;
+};

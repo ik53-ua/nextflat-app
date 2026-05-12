@@ -18,7 +18,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [contacto, setContacto] = useState(null); // {id, nombre, imagen}
+  const [contacto, setContacto] = useState({ id: null, nombre: '', imagen: '', participantes: [] });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -62,6 +62,7 @@ export default function ChatPage() {
             id: thisMatch.contactoId,
             nombre: thisMatch.nombreContacto,
             imagen: thisMatch.imagenContacto,
+            participantes: thisMatch.participantes || []
           });
         }
       }
@@ -253,33 +254,44 @@ export default function ChatPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="p-2 text-[#e8385d] hover:bg-rose-50 rounded-full transition-colors"
-              title="Agendar visita"
-            >
-              <CalendarIcon size={20} />
-            </button>
-            <button
-              onClick={() => contacto?.id && navigate(`/candidato/${contacto.id}`, { state: { readOnly: true } })}
-              className="relative group focus:outline-none"
-              title="Ver perfil"
-            >
-              {contacto?.imagen ? (
-                <img
-                  src={contacto.imagen}
-                  alt={contacto.nombre}
-                  className="w-10 h-10 rounded-full object-cover shadow-md transition-opacity group-hover:opacity-75"
-                />
+            {currentUser.rol !== 'DELEGADO' && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="p-2 text-[#e8385d] hover:bg-rose-50 rounded-full transition-colors"
+                title="Agendar visita"
+              >
+                <CalendarIcon size={20} />
+              </button>
+            )}
+
+            {/* ESTA ES LA NUEVA PARTE DE LOS AVATARES SOLAPADOS */}
+            <div className="relative group focus:outline-none flex -space-x-3 ml-2">
+              {contacto.participantes && contacto.participantes.length > 0 ? (
+                contacto.participantes.slice(0, 3).map((p, i) => (
+                  p.fotoPerfil ? (
+                    <img
+                      key={p.id}
+                      src={p.fotoPerfil}
+                      alt={p.nombre}
+                      className={`w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm relative z-[${30 - i * 10}]`}
+                    />
+                  ) : (
+                    <div key={p.id} className={`w-9 h-9 rounded-full bg-violet-100 border-2 border-white flex items-center justify-center shadow-sm relative z-[${30 - i * 10}]`}>
+                      <span className="text-violet-600 font-bold text-sm">{p.nombre?.charAt(0)?.toUpperCase()}</span>
+                    </div>
+                  )
+                ))
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#e8385d] to-[#ff7b93] flex items-center justify-center shadow-md text-white font-bold">
-                  {contacto?.nombre?.charAt(0)?.toUpperCase() || 'NF'}
-                </div>
+                /* Fallback: Si por lo que sea no hay lista, mostramos la imagen que había antes */
+                contacto?.imagen ? (
+                  <img src={contacto.imagen} alt={contacto.nombre} className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#e8385d] to-[#ff7b93] flex items-center justify-center shadow-md text-white font-bold">
+                    {contacto?.nombre?.charAt(0)?.toUpperCase() || 'NF'}
+                  </div>
+                )
               )}
-              <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-                <Eye className="w-4 h-4 text-white" />
-              </div>
-            </button>
+            </div>
           </div>
         </div>
       </div>

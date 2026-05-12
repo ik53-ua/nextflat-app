@@ -22,29 +22,31 @@ export default function OwnerFeed() {
       navigate("/login");
       return;
     }
-    if (userRol !== "PROPIETARIO") {
+    // CAMBIO: Denegamos acceso SOLO si no es PROPIETARIO ni DELEGADO
+    if (userRol !== "PROPIETARIO" && userRol !== "DELEGADO") {
       setAccessDenied(true);
       setLoading(false);
     }
   }, []);
 
-   const fetchCandidatos = async () => {
-     if (!userId || userRol !== "PROPIETARIO") return;
-     setLoading(true);
-     try {
-       const data = await getCandidatosParaPropietario(userId);
-       setCandidatos(Array.isArray(data) ? data : []);
-     } catch (error) {
-       console.error("Error fetching candidatos:", error);
-       setCandidatos([]);
-     } finally {
-       setLoading(false);
-     }
-   };
-
+  const fetchCandidatos = async () => {
+    // CAMBIO: Permitir la petición si es PROPIETARIO o DELEGADO
+    if (!userId || (userRol !== "PROPIETARIO" && userRol !== "DELEGADO")) return;
+    setLoading(true);
+    try {
+      const data = await getCandidatosParaPropietario(userId);
+      setCandidatos(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching candidatos:", error);
+      setCandidatos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (userRol === "PROPIETARIO") {
+    // CAMBIO: Disparar la petición si es PROPIETARIO o DELEGADO
+    if (userRol === "PROPIETARIO" || userRol === "DELEGADO") {
       fetchCandidatos();
     }
   }, [userId]);
@@ -54,7 +56,7 @@ export default function OwnerFeed() {
 
     try {
       await swipeCandidato({
-        propietarioId: userId,
+        propietarioId: userId, // Este ID funciona para el dueño o el delegado en el backend
         candidatoId: candidato.id,
         tipoInteraccion: tipo,
       });
@@ -87,10 +89,10 @@ export default function OwnerFeed() {
             <ShieldAlert className="w-10 h-10 text-pink-500" />
           </div>
           <h2 className="text-2xl font-extrabold text-slate-800">
-            Sección exclusiva para propietarios
+            Sección exclusiva para propietarios o gestores
           </h2>
           <p className="text-slate-500 text-sm">
-            Solo los propietarios pueden ver el feed de candidatos.
+            Solo los propietarios y delegados pueden ver el feed de candidatos.
           </p>
           <Button variant="primary" onClick={() => navigate("/feed")}>
             Ver pisos disponibles
@@ -102,6 +104,14 @@ export default function OwnerFeed() {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative bg-slate-50">
+
+      {/* ESPACIO PARA FILTROS (Solo para Propietarios, los Delegados no lo ven) */}
+      {userRol === "PROPIETARIO" && (
+        <div className="filtros-futuros absolute top-4 right-4 z-50">
+          {/* Aquí añadirás tus botones de filtros en el futuro si lo necesitas */}
+        </div>
+      )}
+
       <div className="flex-1 relative flex items-center justify-center p-0">
         {loading ? (
           <div className="flex flex-col items-center text-slate-500 space-y-4">
@@ -115,7 +125,7 @@ export default function OwnerFeed() {
             </div>
             <p className="text-2xl font-bold text-slate-800">¡Sin candidatos!</p>
             <p className="text-slate-500 text-sm">
-              Cuando un inquilino dé Like a uno de tus pisos, aparecerá aquí para que lo evalúes.
+              Cuando un inquilino dé Like a uno de tus pisos delegados, aparecerá aquí para que lo evalúes.
             </p>
             <div className="flex gap-3 mt-4 w-full">
               <Button onClick={handleRewind} variant="outline" className="flex-1 text-[#e8385d] border-[#e8385d]/30 hover:bg-[#e8385d]/10">

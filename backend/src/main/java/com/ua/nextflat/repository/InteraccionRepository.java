@@ -16,7 +16,8 @@ public interface InteraccionRepository extends JpaRepository<Interaccion, Long> 
        @Query(value = "SELECT DISTINCT u.* FROM usuarios u " +
                      "JOIN interacciones i ON i.usuario_origen_id = u.id " +
                      "JOIN inmuebles inm ON i.inmueble_destino_id = inm.id " +
-                     "WHERE inm.propietario_id = :propietarioId " +
+                     "LEFT JOIN permisos_gestion pg ON pg.inmueble_id = inm.id AND pg.activo = true " +
+                     "WHERE (inm.propietario_id = :propietarioId OR pg.inquilino_gestor_id = :propietarioId) " +
                      "AND i.tipo = 'LIKE' " +
                      "AND NOT EXISTS (" +
                      "  SELECT 1 FROM interacciones ev " +
@@ -27,8 +28,9 @@ public interface InteraccionRepository extends JpaRepository<Interaccion, Long> 
 
        @Query(value = "SELECT i.* FROM interacciones i " +
                      "JOIN inmuebles inm ON i.inmueble_destino_id = inm.id " +
+                     "LEFT JOIN permisos_gestion pg ON pg.inmueble_id = inm.id AND pg.activo = true " +
                      "WHERE i.usuario_origen_id = :candidatoId " +
-                     "AND inm.propietario_id = :propietarioId " +
+                     "AND (inm.propietario_id = :propietarioId OR pg.inquilino_gestor_id = :propietarioId) " +
                      "AND i.tipo = 'LIKE' " +
                      "ORDER BY i.fecha DESC", nativeQuery = true)
        List<Interaccion> findLikesDeCandidatoEnPisosDelPropietario(

@@ -18,19 +18,6 @@ import CalendarPage from './pages/CalendarPage';
 import './App.css';
 import GrupoDetails from './pages/GrupoDetails';
 
-// Redirect raíz según rol del usuario logueado
-function RootRedirect() {
-  const usuarioGuardado = localStorage.getItem('usuarioLogueado');
-  const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
-  if (user?.rol === 'SUPERVISOR') {
-    return <Navigate to="/supervisor" replace />;
-  }
-  if (user?.rol === 'PROPIETARIO') {
-    return <Navigate to="/owner-feed" replace />;
-  }
-  return <Navigate to="/feed" replace />;
-}
-
 // Protected Route para el Supervisor
 function SupervisorRoute({ children }) {
   const usuarioGuardado = localStorage.getItem('usuarioLogueado');
@@ -41,6 +28,21 @@ function SupervisorRoute({ children }) {
   }
 
   return children;
+}
+
+// Redirect raíz actualizado (Propietario y Delegado van al mismo feed)
+function RootRedirect() {
+  const usuarioGuardado = localStorage.getItem('usuarioLogueado');
+  const user = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+
+  if (user?.rol === 'SUPERVISOR') {
+    return <Navigate to="/supervisor" replace />;
+  }
+  // Si es Propietario O Delegado, van directos a ver candidatos
+  if (user?.rol === 'PROPIETARIO' || user?.rol === 'DELEGADO') {
+    return <Navigate to="/owner-feed" replace />;
+  }
+  return <Navigate to="/feed" replace />;
 }
 
 // Placeholder pages — will be built by the team later
@@ -68,7 +70,6 @@ function PerfilPlaceholder() {
   );
 }
 
-
 function App() {
   return (
     <Router>
@@ -87,7 +88,6 @@ function App() {
           <Route path="/chat/:matchId" element={<ChatPage />} />
           <Route path="/calendario" element={<CalendarPage />} />
 
-          {/* Tu ruta integrada en el nuevo sistema */}
           <Route path="/mis-inmuebles" element={<MisInmuebles />} />
           <Route path="/mis-inmuebles/nuevo" element={<AltaInmueble />} />
           <Route path="/mis-inmuebles/editar/:id" element={<EditarInmueble />} />

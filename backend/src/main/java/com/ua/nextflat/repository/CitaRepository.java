@@ -13,4 +13,5 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
     List<Cita> findByInquilinoIdOrderByFechaHoraAsc(Long inquilinoId);
     List<Cita> findByInmuebleIdOrderByFechaHoraAsc(Long inmuebleId);
     List<Cita> findByEstado(EstadoCita estado);
+    List<Cita> findByInquilinoIdInOrderByFechaHoraAsc(List<Long> inquilinoIds);
 }

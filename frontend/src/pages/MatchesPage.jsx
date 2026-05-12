@@ -3,55 +3,51 @@ import { useNavigate } from 'react-router-dom';
 import { getMatchesForUser } from '../services/api';
 import { Eye } from 'lucide-react';
 
-
 function formatFecha(fechaISO) {
   if (!fechaISO) return '';
   const fecha = new Date(fechaISO);
   return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
 }
 
-function AvatarFallback({ nombre }) {
+function AvatarFallback({ nombre, size = "w-14 h-14", textClass = "text-xl" }) {
   const inicial = nombre ? nombre.charAt(0).toUpperCase() : '?';
   return (
-    <div className="w-14 h-14 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
-      <span className="text-violet-600 font-bold text-xl">{inicial}</span>
+    <div className={`${size} rounded-full bg-violet-100 border-2 border-white flex items-center justify-center flex-shrink-0 shadow-sm`}>
+      <span className={`text-violet-600 font-bold ${textClass}`}>{inicial}</span>
     </div>
   );
 }
 
-// Añadimos "index" a las props
-function MatchCard({ match, onClick, onAvatarClick, index }) {
-  const [imgError, setImgError] = useState(false);
-
-  // Lógica para alternar colores: Pares (rosa suave), Impares (blanco)
+function MatchCard({ match, onClick, index }) {
   const bgColor = index % 2 === 0 ? 'bg-[#fff1f3]' : 'bg-white';
+  const participantes = match.participantes || [];
 
   return (
     <button
       onClick={() => onClick(match.matchId)}
       className={`w-full flex items-center gap-4 px-4 py-3 hover:opacity-80 active:opacity-60 transition-colors text-left ${bgColor}`}
     >
-      {/* Avatar — clic independiente abre el perfil del candidato */}
-      <div
-        className="relative flex-shrink-0 group"
-        onClick={(e) => { e.stopPropagation(); onAvatarClick(match.contactoId); }}
-        title="Ver perfil"
-      >
-        {match.imagenContacto && !imgError ? (
-          <img
-            src={match.imagenContacto}
-            alt={match.nombreContacto}
-            className="w-14 h-14 rounded-full object-cover shadow-sm transition-opacity group-hover:opacity-75"
-            onError={() => setImgError(true)}
-          />
+      {/* Avatares Solapados */}
+      <div className="relative flex-shrink-0 flex -space-x-4">
+        {participantes.length > 0 ? (
+          participantes.slice(0, 3).map((p, i) => (
+            p.fotoPerfil ? (
+              <img
+                key={p.id}
+                src={p.fotoPerfil}
+                alt={p.nombre}
+                className={`w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm relative z-[${30 - i * 10}]`}
+              />
+            ) : (
+              <AvatarFallback key={p.id} nombre={p.nombre} />
+            )
+          ))
         ) : (
+          // Retrocompatibilidad por si no hay lista
           <AvatarFallback nombre={match.nombreContacto} />
         )}
-        {/* Ícono de ojo al hacer hover */}
-        <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-          <Eye className="w-5 h-5 text-white" />
-        </div>
       </div>
+
       {/* Texto */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-slate-800 truncate">{match.nombreContacto}</p>
@@ -59,6 +55,7 @@ function MatchCard({ match, onClick, onAvatarClick, index }) {
           <p className="text-sm text-slate-500 truncate">{match.subtitulo}</p>
         )}
       </div>
+
       {/* Fecha */}
       <span className="text-xs text-slate-400 flex-shrink-0 font-medium">
         {formatFecha(match.fechaMatch)}
@@ -100,41 +97,15 @@ export default function MatchesPage() {
     navigate(`/chat/${matchId}`);
   };
 
-  const handleAvatarClick = (contactoId) => {
-    if (contactoId) navigate(`/candidato/${contactoId}`, { state: { readOnly: true } });
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="w-8 h-8 border-4 border-violet-400 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full px-8 text-center">
-        <p className="text-red-500 text-sm">{error}</p>
-      </div>
-    );
-  }
-
-  if (matches.length === 0) {
-    return <EmptyState />;
-  }
+  if (loading) return <div className="flex items-center justify-center h-full"><div className="w-8 h-8 border-4 border-violet-400 border-t-transparent rounded-full animate-spin" /></div>;
+  if (error) return <div className="flex items-center justify-center h-full px-8 text-center"><p className="text-red-500 text-sm">{error}</p></div>;
+  if (matches.length === 0) return <EmptyState />;
 
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex-1 overflow-y-auto">
         {matches.map((match, index) => (
-          <MatchCard
-            key={match.matchId}
-            match={match}
-            onClick={handleMatchClick}
-            onAvatarClick={handleAvatarClick}
-            index={index}
-          />
+          <MatchCard key={match.matchId} match={match} onClick={handleMatchClick} index={index} />
         ))}
       </div>
     </div>

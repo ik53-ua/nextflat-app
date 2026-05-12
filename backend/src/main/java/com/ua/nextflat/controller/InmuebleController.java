@@ -6,6 +6,7 @@ import com.ua.nextflat.repository.FotoInmuebleRepository;
 import com.ua.nextflat.repository.InmuebleRepository;
 import com.ua.nextflat.dto.DetalleInmuebleDTO;
 import com.ua.nextflat.service.InmuebleService;
+import com.ua.nextflat.model.PermisosGestion;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -33,19 +34,70 @@ public class InmuebleController {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private com.ua.nextflat.repository.PermisosGestionRepository permisosGestionRepository;
+    
+    @Autowired
+    private com.ua.nextflat.repository.UsuarioRepository usuarioRepository;
+
     @GetMapping("/mis-inmuebles/{propietarioId}")
     public ResponseEntity<List<Inmueble>> getMisInmuebles(@PathVariable Long propietarioId) {
-
         List<Inmueble> misPisos = inmuebleRepository.findByPropietarioId(propietarioId);
 
         for (Inmueble piso : misPisos) {
-            List<FotoInmueble> fotos = fotoInmuebleRepository.findByInmuebleId(piso.getId());
-            if (!fotos.isEmpty()) {
-                piso.setFotoPrincipal(fotos.get(0).getUrl());
-            }
+        List<FotoInmueble> fotos = fotoInmuebleRepository.findByInmuebleId(piso.getId());
+        if (!fotos.isEmpty()) piso.setFotoPrincipal(fotos.get(0).getUrl());
+        
+        // Mapear múltiples gestores
+        List<com.ua.nextflat.model.PermisosGestion> permisos = permisosGestionRepository.findByInmuebleIdAndActivoTrue(piso.getId());
+        List<java.util.Map<String, Object>> listaGestores = new java.util.ArrayList<>();
+        for(com.ua.nextflat.model.PermisosGestion p : permisos) {
+            listaGestores.add(java.util.Map.of("id", p.getInquilinoGestor().getId(), "nombre", p.getInquilinoGestor().getNombre()));
+        }
+        piso.setGestores(listaGestores);
+    }
+        return ResponseEntity.ok(misPisos);
+    }
+
+    // EN InmuebleController.java
+
+    @PostMapping("/{id}/delegar")
+    public ResponseEntity<?> delegarInmueble(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        String email = payload.get("email");
+        Optional<com.ua.nextflat.model.Usuario> userOpt = usuarioRepository.findByEmail(email);
+        
+        if(userOpt.isEmpty() || userOpt.get().getRol() != com.ua.nextflat.model.enums.RolUsuario.INQUILINO) {
+            return ResponseEntity.badRequest().body("El email no corresponde a un inquilino válido.");
         }
 
-        return ResponseEntity.ok(misPisos);
+        // 1. Convertirlo en DELEGADO
+        com.ua.nextflat.model.Usuario delegado = userOpt.get();
+        delegado.setRol(com.ua.nextflat.model.enums.RolUsuario.DELEGADO);
+        usuarioRepository.save(delegado);
+
+        // 2. Guardar el permiso
+        Inmueble inmueble = inmuebleRepository.findById(id).orElseThrow();
+        com.ua.nextflat.model.PermisosGestion permiso = new com.ua.nextflat.model.PermisosGestion();
+        permiso.setInmueble(inmueble);
+        permiso.setPropietario(inmueble.getPropietario());
+        permiso.setInquilinoGestor(delegado);
+        permisosGestionRepository.save(permiso);
+        
+        return ResponseEntity.ok(java.util.Map.of("id", delegado.getId(), "nombre", delegado.getNombre(), "mensaje", "Delegado asignado con éxito"));
+    }
+
+    @DeleteMapping("/{id}/delegar/{gestorId}")
+    public ResponseEntity<?> quitarGestor(@PathVariable Long id, @PathVariable Long gestorId) {
+        permisosGestionRepository.findByInmuebleIdAndInquilinoGestorIdAndActivoTrue(id, gestorId).ifPresent(p -> {
+            p.setActivo(false);
+            permisosGestionRepository.save(p);
+            
+            // Devolverle su rol de Inquilino normal
+            com.ua.nextflat.model.Usuario exDelegado = p.getInquilinoGestor();
+            exDelegado.setRol(com.ua.nextflat.model.enums.RolUsuario.INQUILINO);
+            usuarioRepository.save(exDelegado);
+        });
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")

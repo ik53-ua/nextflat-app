@@ -11,10 +11,14 @@ import java.util.List;
 @Repository
 public interface MatchRepository extends JpaRepository<Match, Long> {
 
-        @Query("SELECT m FROM Match m " +
-                        "WHERE (m.inquilino.id = :userId OR m.propietario.id = :userId) " +
-                        "AND m.activo = true " +
-                        "ORDER BY m.fechaMatch DESC")
+        @Query("SELECT DISTINCT m FROM Match m " +
+               "LEFT JOIN PermisosGestion pg ON pg.inmueble.id = m.inmueble.id AND pg.activo = true " +
+               "WHERE m.activo = true AND (" +
+               "   m.propietario.id = :userId " +
+               "   OR pg.inquilinoGestor.id = :userId " +
+               "   OR m.inquilino.id = :userId " +
+               "   OR (m.inquilino.grupo IS NOT NULL AND m.inquilino.grupo = (SELECT u.grupo FROM Usuario u WHERE u.id = :userId))" +
+               ") ORDER BY m.fechaMatch DESC")
         List<Match> findActiveMatchesByUserId(@Param("userId") Long userId);
 
         @Query("SELECT COUNT(m) FROM Match m " +

@@ -8,7 +8,7 @@ import Button from '../components/ui/Button';
 export default function GrupoDetails() {
     const location = useLocation();
     const navigate = useNavigate();
-    
+
     // Sacamos los datos de la "mochila"
     const grupo = location.state?.datos;
     const readOnly = location.state?.readOnly === true;
@@ -47,8 +47,8 @@ export default function GrupoDetails() {
         <div className="w-full h-full flex flex-col bg-slate-50 overflow-y-auto relative">
             {/* Cabecera con botón de volver */}
             <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 p-4 flex items-center shadow-sm">
-                <button 
-                    onClick={() => navigate(-1)} 
+                <button
+                    onClick={() => navigate(-1)}
                     className="p-2 mr-3 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-600 transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5" />
@@ -60,7 +60,7 @@ export default function GrupoDetails() {
 
             {/* Contenido Principal con padding inferior extra para los botones */}
             <div className="p-6 max-w-4xl mx-auto w-full space-y-8 pb-36">
-                
+
                 {/* Info de interés común y Bio */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
@@ -70,7 +70,7 @@ export default function GrupoDetails() {
                             <span>{grupo.interesadoEnDireccion ? `${grupo.interesadoEnDireccion}, ` : ''}{grupo.interesadoEnMunicipio || 'Cualquier zona'}</span>
                         </div>
                     </div>
-                    
+
                     {grupo.bio && (
                         <div className="md:col-span-2 bg-gradient-to-br from-[#e8385d] to-[#c0284a] p-6 rounded-2xl shadow-md text-white">
                             <h2 className="text-sm font-bold text-white/80 uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -86,24 +86,28 @@ export default function GrupoDetails() {
                     <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight border-b border-slate-200 pb-2">
                         Conoce a los inquilinos
                     </h2>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
                         {grupo.usuarios.map((user) => (
-                            <div key={user.id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col group transition-all hover:shadow-md hover:border-slate-200">
-                                
+                            <div
+                                key={user.id}
+                                onClick={() => navigate(`/candidato/${user.id}`, { state: { readOnly: true } })}
+                                className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col group transition-all hover:shadow-md hover:border-slate-200 cursor-pointer"
+                            >
+
                                 {/* NUEVO: Contenedor Vertical (Retrato 4:5) para que la foto encaje perfecta sin fondos borrosos */}
                                 <div className="w-full aspect-[4/5] relative bg-slate-100 overflow-hidden">
-                                    
+
                                     {/* La foto encuadrada de forma natural */}
-                                    <img 
-                                        src={user.fotoPerfil || `https://ui-avatars.com/api/?name=${user.nombre}&size=400&background=e8385d&color=fff`} 
+                                    <img
+                                        src={user.fotoPerfil || `https://ui-avatars.com/api/?name=${user.nombre}&size=400&background=e8385d&color=fff`}
                                         alt={user.nombre}
                                         className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                                     />
-                                    
+
                                     {/* Gradiente oscuro abajo para que se lea el nombre */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 pointer-events-none" />
-                                    
+
                                     <div className="absolute bottom-5 left-5 right-5 z-20 pointer-events-none">
                                         <div className="flex justify-between items-end">
                                             <div>
@@ -118,7 +122,7 @@ export default function GrupoDetails() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {/* Detalles inferiores */}
                                 <div className="p-5 flex-1 flex flex-col justify-between bg-white border-t border-slate-100">
                                     {user.profesion ? (

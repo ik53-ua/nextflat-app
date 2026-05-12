@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import com.ua.nextflat.dto.CandidatoFeedDTO;
 import java.time.LocalDate;
 import java.time.Period;
+import com.ua.nextflat.repository.PermisosGestionRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +24,7 @@ import java.util.Optional;
 @Service
 public class FeedService {
 
+    private final PermisosGestionRepository permisosGestionRepository;
     private final InmuebleRepository inmuebleRepository;
     private final InteraccionRepository interaccionRepository;
     private final FotoInmuebleRepository fotoInmuebleRepository;
@@ -32,11 +34,13 @@ public class FeedService {
     public FeedService(InmuebleRepository inmuebleRepository,
             InteraccionRepository interaccionRepository,
             FotoInmuebleRepository fotoInmuebleRepository,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            PermisosGestionRepository permisosGestionRepository) {
         this.inmuebleRepository = inmuebleRepository;
         this.interaccionRepository = interaccionRepository;
         this.fotoInmuebleRepository = fotoInmuebleRepository;
         this.usuarioRepository = usuarioRepository;
+        this.permisosGestionRepository = permisosGestionRepository;
     }
 
     public List<FeedInmuebleDTO> getFeedForUser(Long usuarioId, String municipio, java.math.BigDecimal precioMin, java.math.BigDecimal precioMax, 
