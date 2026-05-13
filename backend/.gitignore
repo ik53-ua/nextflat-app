@@ -31,3 +31,36 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Dependencias de Node (¡Vital no subir esto!)
+node_modules/
+
+# Archivos de construcción de Vite
+dist/
+dist-ssr/
+*.local
+
+# Archivos de entorno (Secretos)
+.env
+.env.*
+!.env.example
+
+# Logs de errores de NPM/Yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Entornos de desarrollo y SO
+.vscode/
+.idea/
+.DS_Store
+
+# Archivos de entorno y secretos de Spring Boot (¡Muy importante!)
+application-secret.yaml
+application-dev.yaml
+*secret*.properties
+*secret*.yaml
+
+# Logs de Java
+*.log
